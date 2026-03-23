@@ -5,22 +5,30 @@
 #ifndef AUTOMATE_H
 #define AUTOMATE_H
 
+
+#define MAX_ETATS 100
+#define MAX_SYMBOLES 26
+#define MAX_TRANSITIONS 10
+
+// Structure automate
 typedef struct {
-    int nb_symboles;
-    int nb_etats;
+    int nbSymboles;
+    int nbEtats;
 
-    int nb_initiaux;
-    int initiaux[100];
+    int nbInitiaux;
+    int initiaux[MAX_ETATS];
 
-    int nb_finaux;
-    int finaux[100];
+    int nbFinaux;
+    int finaux[MAX_ETATS];
 
-    int transitions[100][26][100]; // [etat][symbole][liste]
-    int nb_transitions[100][26];   // nb d'états par case
+    int table[MAX_ETATS][MAX_SYMBOLES][MAX_TRANSITIONS];
+    int nbTransitions[MAX_ETATS][MAX_SYMBOLES];
 
 } Automate;
 
-Automate lire_automate(char *nom);
-void afficher_automate(Automate A);
+// Fonctions
+void lire_automate(const char *nomFichier, Automate *A);
+void afficher_automate(Automate *A);
 
 #endif
+
