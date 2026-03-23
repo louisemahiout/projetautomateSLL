@@ -1,9 +1,5 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.20)
+
 project(projetautomateSLL C)
 
-set(CMAKE_C_STANDARD 11)
-
-add_executable(projetautomateSLL
-        main.c
-        automate.c
-)
+add_executable(projetautomateSLL main.c automate.c)
