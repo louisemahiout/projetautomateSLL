@@ -1,22 +1,29 @@
+
+
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "automate.h"
 
-int main() {
 
+
+int main() {
+    Automate A;
     int choix;
-    char nom_fichier[100];
 
     printf("Quel automate voulez-vous utiliser ? ");
     scanf("%d", &choix);
 
-    sprintf(nom_fichier, "Automates/automate%d.txt", choix);
+    char chemin[100];
 
-    Automate A = lire_automate(nom_fichier);
+    // ⚠️ adapte selon ton cas (test si besoin)
+    sprintf(chemin, "../Automates/automate%d.txt", choix);
 
-    printf("\n--- AUTOMATE CHARGE ---\n");
-    afficher_automate(A);
+    // Debug (tu peux enlever après)
+    printf("Chargement du fichier : %s\n", chemin);
+
+    lire_automate(chemin, &A);
+
+    printf("\n=== AFFICHAGE DE L'AUTOMATE %d ===\n\n", choix);
+    afficher_automate(&A);
 
     return 0;
 }
