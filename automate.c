@@ -63,44 +63,87 @@ int est_final(Automate *A, int etat) {
     return 0;
 }
 
+
+/*Affiche UNE seule ligne */
+void afficher_ligne(Automate *A, int i, int largeur) {
+    if (est_initial(A, i)) {
+        printf("E ");
+    } else {
+        printf("  ");
+    }
+
+    if (est_final(A, i)) {
+        printf("S ");
+    } else {
+        printf("  ");
+    }
+
+    printf("%-2d ", i);
+
+    for (int j = 0; j < A->nbSymboles; j++) {
+        if (A->nbTransitions[i][j] == 0) {
+            printf("%-*s", largeur, "-");
+        } else {
+            int len = 0;
+
+            for (int k = 0; k < A->nbTransitions[i][j]; k++) {
+                printf("%d", A->table[i][j][k]);
+                len++;
+
+                if (k < A->nbTransitions[i][j] - 1) {
+                    printf(",");
+                    len++;
+                }
+            }
+
+            for (int s = len; s < largeur; s++) {
+                printf(" ");
+            }
+        }
+    }
+
+    printf("\n");
+}
+
+
+/* =========================
+   Affichage de l'automate
+   ========================= */
 void afficher_automate(Automate *A) {
     int largeur = 8;
 
-    // En-tête
+    /* En-tête */
     printf("     ");
     for (int i = 0; i < A->nbSymboles; i++) {
         printf("%-*c", largeur, 'a' + i);
     }
     printf("\n");
 
-    // Lignes
+    /* 1) Etats initiaux */
     for (int i = 0; i < A->nbEtats; i++) {
-
-        if (est_initial(A, i)) printf("E ");
-        else printf("  ");
-
-        if (est_final(A, i)) printf("S ");
-        else printf("  ");
-
-        printf("%-2d ", i);
-
-        for (int j = 0; j < A->nbSymboles; j++) {
-
-            if (A->nbTransitions[i][j] == 0) {
-                printf("%-*s", largeur, "-");
-            } else {
-                for (int k = 0; k < A->nbTransitions[i][j]; k++) {
-                    printf("%d", A->table[i][j][k]);
-                    if (k < A->nbTransitions[i][j] - 1)
-                        printf(",");
-                }
-
-                int len = A->nbTransitions[i][j] * 2;
-                for (int s = len; s < largeur; s++)
-                    printf(" ");
-            }
+        if (est_initial(A, i) && !est_final(A, i)) {
+            afficher_ligne(A, i, largeur);
         }
+    }
 
-        printf("\n");
+    /* 2) Etats normaux */
+    for (int i = 0; i < A->nbEtats; i++) {
+        if (!est_initial(A, i) && !est_final(A, i)) {
+            afficher_ligne(A, i, largeur);
+        }
+    }
+
+    /* 3) Etats à la fois initiaux et finaux */
+    for (int i = 0; i < A->nbEtats; i++) {
+        if (est_initial(A, i) && est_final(A, i)) {
+            afficher_ligne(A, i, largeur);
+        }
+    }
+
+    /* 4) Etats finaux seulement */
+    for (int i = 0; i < A->nbEtats; i++) {
+        if (!est_initial(A, i) && est_final(A, i)) {
+            afficher_ligne(A, i, largeur);
+        }
     }
 }

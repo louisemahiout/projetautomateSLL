@@ -27,7 +27,12 @@ typedef struct {
 } Automate;
 
 // Fonctions
+
 void lire_automate(const char *nomFichier, Automate *A);
+int est_initial(Automate *A, int etat);
+int est_final(Automate *A, int etat);
+int est_final(Automate *A, int etat);
+void afficher_ligne(Automate *A, int i, int largeur);
 void afficher_automate(Automate *A);
 
 #endif
