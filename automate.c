@@ -1,96 +1,106 @@
+
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "automate.h"
 
-Automate lire_automate(char *nom) {
+void lire_automate(const char *nomFichier, Automate *A) {
+    FILE *f = fopen(nomFichier, "r");
 
-    FILE *f = fopen(nom, "r");
     if (f == NULL) {
-        printf("Erreur ouverture fichier : %s\n", nom);
+        printf("Erreur ouverture fichier\n");
         exit(1);
     }
 
-    Automate A;
+    fscanf(f, "%d", &A->nbSymboles);
+    fscanf(f, "%d", &A->nbEtats);
 
-    fscanf(f, "%d", &A.nb_symboles);
-    fscanf(f, "%d", &A.nb_etats);
+    fscanf(f, "%d", &A->nbInitiaux);
+    for (int i = 0; i < A->nbInitiaux; i++)
+        fscanf(f, "%d", &A->initiaux[i]);
 
-    fscanf(f, "%d", &A.nb_initiaux);
-    for(int i=0;i<A.nb_initiaux;i++)
-        fscanf(f, "%d", &A.initiaux[i]);
+    fscanf(f, "%d", &A->nbFinaux);
+    for (int i = 0; i < A->nbFinaux; i++)
+        fscanf(f, "%d", &A->finaux[i]);
 
-    fscanf(f, "%d", &A.nb_finaux);
-    for(int i=0;i<A.nb_finaux;i++)
-        fscanf(f, "%d", &A.finaux[i]);
+    int nbTrans;
+    fscanf(f, "%d", &nbTrans);
 
-    int nb_trans;
-    fscanf(f, "%d", &nb_trans);
+    // Initialisation
+    for (int i = 0; i < A->nbEtats; i++) {
+        for (int j = 0; j < A->nbSymboles; j++) {
+            A->nbTransitions[i][j] = 0;
+        }
+    }
 
-    // init
-    for(int i=0;i<100;i++)
-        for(int j=0;j<26;j++)
-            A.nb_transitions[i][j] = 0;
-
-    // lecture transitions
-    for(int i=0;i<nb_trans;i++) {
+    // Lecture transitions
+    for (int i = 0; i < nbTrans; i++) {
         int depart, arrivee;
         char symbole;
 
         fscanf(f, "%d%c%d", &depart, &symbole, &arrivee);
 
-        int s = symbole - 'a';
+        int col = symbole - 'a';
 
-        int index = A.nb_transitions[depart][s];
-        A.transitions[depart][s][index] = arrivee;
-        A.nb_transitions[depart][s]++;
+        A->table[depart][col][A->nbTransitions[depart][col]] = arrivee;
+        A->nbTransitions[depart][col]++;
     }
 
     fclose(f);
-    return A;
 }
 
-void afficher_automate(Automate A) {
+// Fonction pour vérifier si un état est initial
+int est_initial(Automate *A, int etat) {
+    for (int i = 0; i < A->nbInitiaux; i++)
+        if (A->initiaux[i] == etat) return 1;
+    return 0;
+}
 
-    // alphabet
-    printf("      ");
-    for(int i=0;i<A.nb_symboles;i++)
-        printf("%-8c", 'a'+i);
+// Fonction pour vérifier si un état est final
+int est_final(Automate *A, int etat) {
+    for (int i = 0; i < A->nbFinaux; i++)
+        if (A->finaux[i] == etat) return 1;
+    return 0;
+}
+
+void afficher_automate(Automate *A) {
+    int largeur = 8;
+
+    // En-tête
+    printf("     ");
+    for (int i = 0; i < A->nbSymboles; i++) {
+        printf("%-*c", largeur, 'a' + i);
+    }
     printf("\n");
 
-    for(int i=0;i<A.nb_etats;i++) {
+    // Lignes
+    for (int i = 0; i < A->nbEtats; i++) {
 
-        int isInit = 0, isFinal = 0;
-
-        for(int j=0;j<A.nb_initiaux;j++)
-            if(A.initiaux[j]==i) isInit=1;
-
-        for(int j=0;j<A.nb_finaux;j++)
-            if(A.finaux[j]==i) isFinal=1;
-
-        if(isInit) printf("E ");
-        else if(isFinal) printf("S ");
+        if (est_initial(A, i)) printf("E ");
         else printf("  ");
 
-        printf("%d ", i);
+        if (est_final(A, i)) printf("S ");
+        else printf("  ");
 
-        for(int s=0;s<A.nb_symboles;s++) {
+        printf("%-2d ", i);
 
-            if (A.nb_transitions[i][s] == 0) {
-                printf("%-8s", "-");
+        for (int j = 0; j < A->nbSymboles; j++) {
+
+            if (A->nbTransitions[i][j] == 0) {
+                printf("%-*s", largeur, "-");
             } else {
-                char buffer[50] = "";
-                for(int k=0; k<A.nb_transitions[i][s]; k++) {
-                    char temp[10];
-                    sprintf(temp, "%d", A.transitions[i][s][k]);
-                    strcat(buffer, temp);
-
-                    if(k < A.nb_transitions[i][s]-1)
-                        strcat(buffer, ",");
+                for (int k = 0; k < A->nbTransitions[i][j]; k++) {
+                    printf("%d", A->table[i][j][k]);
+                    if (k < A->nbTransitions[i][j] - 1)
+                        printf(",");
                 }
-                printf("%-8s", buffer);
+
+                int len = A->nbTransitions[i][j] * 2;
+                for (int s = len; s < largeur; s++)
+                    printf(" ");
             }
         }
+
         printf("\n");
     }
 }
