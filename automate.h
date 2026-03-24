@@ -34,6 +34,11 @@ int est_final(Automate *A, int etat);
 int est_final(Automate *A, int etat);
 void afficher_ligne(Automate *A, int i, int largeur);
 void afficher_automate(Automate *A);
+int est_standard(Automate *A);
+int est_deterministe(Automate *A);
+int est_complet(Automate *A);
+//void standardisation(Automate *A);
+
 
 #endif
 

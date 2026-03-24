@@ -147,3 +147,65 @@ void afficher_automate(Automate *A) {
         }
     }
 }
+
+/*est-il standard ? */
+int est_standard(Automate *A) {
+
+    if (A->nbInitiaux != 1)
+        return 0;
+
+    int init = A->initiaux[0];
+
+    for (int i = 0; i < A->nbEtats; i++) {
+        for (int j = 0; j < A->nbSymboles; j++) {
+            for (int k = 0; k < A->nbTransitions[i][j]; k++) {
+
+                if (A->table[i][j][k] == init) {
+                    printf("Non standard : transition vers l'état initial (%d)\n", init);
+                    return 0;
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+/*est-il déterministe ? */
+int est_deterministe(Automate *A) {
+
+    int deterministe = 1;
+
+    for (int i = 0; i < A->nbEtats; i++) {
+        for (int j = 0; j < A->nbSymboles; j++) {
+
+            if (A->nbTransitions[i][j] > 1) {
+                printf("Non déterministe : état %d avec symbole %c -> plusieurs transitions\n",
+                       i, 'a' + j);
+
+                deterministe = 0;
+            }
+        }
+    }
+
+    return deterministe;
+}
+
+/*est-il complet ? */
+int est_complet(Automate *A) {
+
+    int complet = 1;
+
+    for (int i = 0; i < A->nbEtats; i++) {
+        for (int j = 0; j < A->nbSymboles; j++) {
+
+            if (A->nbTransitions[i][j] == 0) {
+                printf("Non complet : etat %d avec symbole %c -> aucune transition\n",
+                       i, 'a' + j);
+
+                complet = 0;
+            }
+        }
+    }
+
+    return complet;
+}
