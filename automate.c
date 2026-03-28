@@ -346,3 +346,4 @@ void afficher_automate_deterministe_complet(Automate *A) {
     printf("\n===== AUTOMATE DETERMINISTE COMPLET =====\n");
     afficher_automate(A);
 }
+/*
