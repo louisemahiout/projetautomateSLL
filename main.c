@@ -1,56 +1,51 @@
-
-
+// main.c
 #include <stdio.h>
+#include <stdlib.h>
 #include "automate.h"
 
 
 
 int main() {
-    Automate A;
     int choix;
+    char chemin[256];
 
-    printf("Quel automate voulez-vous utiliser ? ");
+    printf("\nQuel automate tu veux utilise?:  ");
     scanf("%d", &choix);
 
-    char chemin[100];
-
-    // ⚠️ adapte selon ton cas (test si besoin)
     sprintf(chemin, "../Automates/automate%d.txt", choix);
+    Automate *AF = lire_automate_sur_fichier(chemin);
 
-    // Debug (tu peux enlever après)
-    printf("Chargement du fichier : %s\n", chemin);
-
-    lire_automate(chemin, &A);
-
-    printf("\n=== AFFICHAGE DE L'AUTOMATE %d ===\n\n", choix);
-    afficher_automate(&A);
-
-    if (!est_standard(&A)) {
-        printf("Automate NON standard\n");
-
-        int choix;
-        printf("Voulez-vous le standardiser ? (1=oui / 0=non) : ");
-        scanf("%d", &choix);
-
-    }
-    else {
-        printf("Automate standard\n");
-    }
-    if (est_deterministe(&A)) {
-        printf("Automate deterministe\n");
+    afficher_automate(AF);
+    if (est_standard(AF)) {
+        printf("\n➡️ L'automate est STANDARDISE\n");
     } else {
-        printf("Automate NON deterministe\n");
+        printf("\n➡️ L'automate n'est PAS standardise\n");
     }
-    if (est_complet(&A)) {
-        printf("Automate complet\n");
-    } else {
-        printf("Automate NON complet\n");
-    }
-    //if (choix == 1) {
-        //standardisation(&A);
-        //printf("\nAutomate standardisé :\n");
-        //afficher_automate(&A);
-    //}
 
-    return 0;
+    Automate *AFDC;
+
+    if (est_deterministe(AF)) {
+
+        printf("✔️ Automate déterministe\n");
+
+        if (est_complet(AF)) {
+            printf("✔️ Automate complet\n");
+            AFDC = AF;
+        } else {
+            printf("❌ Automate non complet\n");
+            AFDC = completion(AF);
+        }
+
+    } else {
+
+        printf("❌ Automate non déterministe\n");
+        AFDC = determinisation_et_completion_automate(AF);
+    }
+
+    afficher_automate_deterministe_complet(AFDC);
+
+    if (AFDC != AF)
+        free(AFDC);
+
+    free(AF);
 }
