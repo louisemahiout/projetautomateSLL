@@ -165,13 +165,6 @@ int est_standard(Automate *A) {
         }
     }
 
-    // 🔹 3. Vérifier qu’il n’y a pas de symbole ε
-    for (int i = 0; i < A->nb_symboles; i++) {
-        if (strcmp(A->symboles[i], "ε") == 0) {
-            return 0;
-        }
-    }
-
     // ✅ Si tout est bon
     return 1;
 }
@@ -346,4 +339,86 @@ void afficher_automate_deterministe_complet(Automate *A) {
     printf("\n===== AUTOMATE DETERMINISTE COMPLET =====\n");
     afficher_automate(A);
 }
-/*
+
+Automate* standardisation(Automate *A) {
+    Automate *B = malloc(sizeof(Automate));
+    memset(B, 0, sizeof(Automate));
+
+    // copier automate
+    *B = *A;
+
+    // 🔹 nouvel état initial
+    char nouvel_initial[10] = "I";
+
+    // éviter conflit si I existe déjà
+    int existe = 1;
+    while (existe) {
+        existe = 0;
+        for (int i = 0; i < B->nb_etats; i++) {
+            if (strcmp(B->etats[i], nouvel_initial) == 0) {
+                strcat(nouvel_initial, "0");
+                existe = 1;
+                break;
+            }
+        }
+    }
+
+    int idxI = B->nb_etats;
+    strcpy(B->etats[idxI], nouvel_initial);
+    B->nb_etats++;
+
+    // 🔹 copier transitions de tous les anciens initiaux
+    for (int init = 0; init < A->nb_initiaux; init++) {
+
+        char *ancien = A->initiaux[init];
+
+        int idxAncien = -1;
+        for (int i = 0; i < A->nb_etats; i++) {
+            if (strcmp(A->etats[i], ancien) == 0) {
+                idxAncien = i;
+                break;
+            }
+        }
+
+        if (idxAncien != -1) {
+            for (int j = 0; j < A->nb_symboles; j++) {
+                for (int k = 0; k < A->nb_transitions[idxAncien][j]; k++) {
+
+                    char *dest = A->transitions[idxAncien][j][k];
+
+                    // éviter doublons
+                    int doublon = 0;
+                    for (int x = 0; x < B->nb_transitions[idxI][j]; x++) {
+                        if (strcmp(B->transitions[idxI][j][x], dest) == 0) {
+                            doublon = 1;
+                            break;
+                        }
+                    }
+
+                    if (!doublon) {
+                        strcpy(
+                            B->transitions[idxI][j][B->nb_transitions[idxI][j]],
+                            dest
+                        );
+                        B->nb_transitions[idxI][j]++;
+                    }
+                }
+            }
+        }
+    }
+
+    // 🔹 si un ancien initial était final → I devient final
+    for (int i = 0; i < A->nb_initiaux; i++) {
+        if (est_final(A, A->initiaux[i])) {
+            strcpy(B->finaux[B->nb_finaux], nouvel_initial);
+            B->nb_finaux++;
+            break;
+        }
+    }
+
+    // 🔹 I devient l’unique initial
+    strcpy(B->initiaux[0], nouvel_initial);
+    B->nb_initiaux = 1;
+
+    return B;
+}

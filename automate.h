@@ -37,6 +37,7 @@ int est_deterministe(Automate *A);
 int est_complet(Automate *A);
 Automate* completion(Automate *A);
 Automate* determinisation_et_completion_automate(Automate *A);
+Automate* standardisation(Automate *A);
 
 void afficher_automate_deterministe_complet(Automate *A);
 

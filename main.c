@@ -20,6 +20,13 @@ int main() {
         printf("\n➡️ L'automate est STANDARDISE\n");
     } else {
         printf("\n➡️ L'automate n'est PAS standardise\n");
+        Automate *AS = standardisation(AF);
+
+        printf("\n===== AUTOMATE STANDARDISE =====\n");
+        afficher_automate(AS);
+
+        free(AF);
+        AF = AS;
     }
 
     Automate *AFDC;
