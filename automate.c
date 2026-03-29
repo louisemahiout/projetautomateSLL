@@ -243,96 +243,215 @@ Automate* completion(Automate *A) {
 
     return B;
 }
-Automate* determinisation_et_completion_automate(Automate *A) {
-
-    Automate *B = malloc(sizeof(Automate));
-
-    // copier alphabet sans ε
-    B->nb_symboles = 0;
+/* =========================================================
+ * epsilon_fermeture
+ * Calcule l'ε-fermeture d'UN état (src = indice dans A->etats).
+ * Remplit fermeture[] avec les indices des états atteignables
+ * via ε uniquement (src inclus). *taille = nombre d'éléments.
+ * ========================================================= */
+void epsilon_fermeture(Automate *A, int src,
+                       int fermeture[], int *taille)
+{
+    /* Chercher la colonne ε dans l'alphabet */
+    int col_eps = -1;
     for (int i = 0; i < A->nb_symboles; i++) {
-        if (strcmp(A->symboles[i], "ε") != 0) {
-            strcpy(B->symboles[B->nb_symboles++], A->symboles[i]);
+        if (strcmp(A->symboles[i], "\xce\xb5") == 0 ||
+            strcmp(A->symboles[i], "ε")         == 0) {
+            col_eps = i;
+            break;
         }
     }
 
-    // état initial = ensemble des initiaux
-    char etat_init[100] = "";
-    for (int i = 0; i < A->nb_initiaux; i++) {
-        strcat(etat_init, A->initiaux[i]);
-        if (i < A->nb_initiaux - 1) strcat(etat_init, ".");
+    int pile[MAX_ETATS];
+    int sommet = 0;
+    int vu[MAX_ETATS] = {0};
+
+    pile[sommet++]   = src;
+    vu[src]          = 1;
+    fermeture[0]     = src;
+    *taille          = 1;
+
+    while (sommet > 0) {
+        int courant = pile[--sommet];
+        if (col_eps == -1) break;
+
+        for (int k = 0; k < A->nb_transitions[courant][col_eps]; k++) {
+            char *dest = A->transitions[courant][col_eps][k];
+            int idx = -1;
+            for (int x = 0; x < A->nb_etats; x++)
+                if (strcmp(A->etats[x], dest) == 0) { idx = x; break; }
+            if (idx != -1 && !vu[idx]) {
+                vu[idx] = 1;
+                fermeture[(*taille)++] = idx;
+                pile[sommet++] = idx;
+            }
+        }
+    }
+}
+
+/* Fermeture ε d'un ensemble d'états (indices) */
+static void eps_fermeture_ens(Automate *A,
+                               int src[], int nb,
+                               int res[], int *taille)
+{
+    int vu[MAX_ETATS] = {0};
+    *taille = 0;
+    for (int i = 0; i < nb; i++) {
+        int ef[MAX_ETATS], tef = 0;
+        epsilon_fermeture(A, src[i], ef, &tef);
+        for (int j = 0; j < tef; j++)
+            if (!vu[ef[j]]) { vu[ef[j]] = 1; res[(*taille)++] = ef[j]; }
+    }
+}
+
+/* Construit "i.j.k" trié depuis un tableau d'indices */
+static void indices_vers_nom(Automate *A,
+                              int idx[], int nb,
+                              char res[])
+{
+    /* tri croissant sur les numéros d'indices */
+    for (int i = 0; i < nb-1; i++)
+        for (int j = i+1; j < nb; j++)
+            if (idx[i] > idx[j]) { int t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+    res[0] = '\0';
+    for (int i = 0; i < nb; i++) {
+        strcat(res, A->etats[idx[i]]);
+        if (i < nb-1) strcat(res, ".");
+    }
+}
+
+/* =========================================================
+ * determinisation_et_completion_automate
+ * Fonctionne pour automates SYNCHRONES et ASYNCHRONES (ε).
+ * ========================================================= */
+Automate* determinisation_et_completion_automate(Automate *A)
+{
+    Automate *B = malloc(sizeof(Automate));
+    if (!B) { printf("Erreur malloc\n"); exit(1); }
+
+    /* Initialiser les compteurs de transitions */
+    for (int i = 0; i < MAX_ETATS; i++)
+        for (int j = 0; j < MAX_SYMBOLES; j++)
+            B->nb_transitions[i][j] = 0;
+
+    /* Alphabet de B = alphabet de A sans ε */
+    B->nb_symboles = 0;
+    for (int i = 0; i < A->nb_symboles; i++) {
+        if (strcmp(A->symboles[i], "\xce\xb5") != 0 &&
+            strcmp(A->symboles[i], "ε")         != 0)
+            strcpy(B->symboles[B->nb_symboles++], A->symboles[i]);
     }
 
-    strcpy(B->etats[0], etat_init);
-    B->nb_etats = 1;
+    /*
+     * sous_etats[i] = tableau des indices (dans A) composant l'état i de B
+     * nb_sous[i]    = taille de ce tableau
+     * Mis en static + memset pour éviter stack overflow et résidus entre appels
+     */
+    static int sous_etats[MAX_ETATS][MAX_ETATS];
+    static int nb_sous[MAX_ETATS];
+    memset(sous_etats, 0, sizeof(sous_etats));
+    memset(nb_sous,    0, sizeof(nb_sous));
+    B->nb_etats = 0;
 
-    strcpy(B->initiaux[0], etat_init);
-    B->nb_initiaux = 1;
+    /* État initial de B = ε-fermeture des initiaux de A */
+    {
+        int init_idx[MAX_ETATS], nb_init = 0;
+        for (int i = 0; i < A->nb_initiaux; i++)
+            for (int x = 0; x < A->nb_etats; x++)
+                if (strcmp(A->etats[x], A->initiaux[i]) == 0)
+                    { init_idx[nb_init++] = x; break; }
 
-    int traité = 0;
+        int ef[MAX_ETATS], tef = 0;
+        eps_fermeture_ens(A, init_idx, nb_init, ef, &tef);
 
-    while (traité < B->nb_etats) {
+        char nom[100];
+        indices_vers_nom(A, ef, tef, nom);
 
-        char *etat = B->etats[traité];
+        strcpy(B->etats[0], nom);
+        for (int i = 0; i < tef; i++) sous_etats[0][i] = ef[i];
+        nb_sous[0] = tef;
+        B->nb_etats = 1;
+        strcpy(B->initiaux[0], nom);
+        B->nb_initiaux = 1;
+    }
+
+    /* Exploration en largeur */
+    int traite = 0;
+    while (traite < B->nb_etats) {
 
         for (int s = 0; s < B->nb_symboles; s++) {
 
-            char nouveau[100] = "";
+            /* Colonne de ce symbole dans A */
+            int col_A = -1;
+            for (int x = 0; x < A->nb_symboles; x++)
+                if (strcmp(A->symboles[x], B->symboles[s]) == 0)
+                    { col_A = x; break; }
+            if (col_A == -1) continue;
 
-            // parcourir chaque sous-état
-            char tmp[100];
-            strcpy(tmp, etat);
+            /* 1. Successeurs directs par symbole s */
+            int succ[MAX_ETATS], nb_succ = 0;
+            int vu_succ[MAX_ETATS] = {0};
 
-            char *token = strtok(tmp, ".");
-
-            while (token) {
-
-                // trouver index dans A
-                for (int i = 0; i < A->nb_etats; i++) {
-                    if (strcmp(A->etats[i], token) == 0) {
-
-                        for (int k = 0; k < A->nb_transitions[i][s]; k++) {
-                            strcat(nouveau, A->transitions[i][s][k]);
-                            strcat(nouveau, ".");
+            for (int q = 0; q < nb_sous[traite]; q++) {
+                int idx = sous_etats[traite][q];
+                for (int k = 0; k < A->nb_transitions[idx][col_A]; k++) {
+                    char *dest = A->transitions[idx][col_A][k];
+                    for (int x = 0; x < A->nb_etats; x++) {
+                        if (strcmp(A->etats[x], dest) == 0) {
+                            if (!vu_succ[x]) { vu_succ[x]=1; succ[nb_succ++]=x; }
+                            break;
                         }
                     }
                 }
-
-                token = strtok(NULL, ".");
             }
 
-            if (strlen(nouveau) > 0) {
-                nouveau[strlen(nouveau) - 1] = '\0';
+            if (nb_succ == 0) continue; /* sera géré par completion() */
 
-                // vérifier si existe déjà
-                int existe = -1;
-                for (int i = 0; i < B->nb_etats; i++) {
-                    if (strcmp(B->etats[i], nouveau) == 0)
-                        existe = i;
-                }
+            /* 2. ε-fermeture des successeurs */
+            int ef[MAX_ETATS], tef = 0;
+            eps_fermeture_ens(A, succ, nb_succ, ef, &tef);
 
-                if (existe == -1) {
-                    strcpy(B->etats[B->nb_etats++], nouveau);
-                }
+            /* 3. Nom du nouvel état */
+            char nom[100];
+            indices_vers_nom(A, ef, tef, nom);
 
-                strcpy(B->transitions[traité][s][0], nouveau);
-                B->nb_transitions[traité][s] = 1;
+            /* 4. Chercher si cet état existe déjà */
+            int idx_dest = -1;
+            for (int i = 0; i < B->nb_etats; i++)
+                if (strcmp(B->etats[i], nom) == 0) { idx_dest = i; break; }
+
+            /* 5. Nouvel état → l'enregistrer */
+            if (idx_dest == -1) {
+                idx_dest = B->nb_etats;
+                strcpy(B->etats[idx_dest], nom);
+                for (int i = 0; i < tef; i++)
+                    sous_etats[idx_dest][i] = ef[i];
+                nb_sous[idx_dest] = tef;
+                B->nb_etats++;
             }
+
+            /* 6. Enregistrer la transition */
+            strcpy(B->transitions[traite][s][0], nom);
+            B->nb_transitions[traite][s] = 1;
         }
-
-        traité++;
+        traite++;
     }
 
-    // états finaux
+    /* États finaux de B */
     B->nb_finaux = 0;
     for (int i = 0; i < B->nb_etats; i++) {
-        for (int j = 0; j < A->nb_finaux; j++) {
-            if (strstr(B->etats[i], A->finaux[j])) {
-                strcpy(B->finaux[B->nb_finaux++], B->etats[i]);
-                break;
+        int fin = 0;
+        for (int q = 0; q < nb_sous[i] && !fin; q++) {
+            for (int f = 0; f < A->nb_finaux; f++) {
+                if (strcmp(A->etats[sous_etats[i][q]], A->finaux[f]) == 0)
+                    { fin = 1; break; }
             }
         }
+        if (fin) strcpy(B->finaux[B->nb_finaux++], B->etats[i]);
     }
 
+    if (est_complet(B))
+        return B;
     return completion(B);
 }
 void afficher_automate_deterministe_complet(Automate *A) {
