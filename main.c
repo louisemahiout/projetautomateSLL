@@ -3,13 +3,11 @@
 #include <stdlib.h>
 #include "automate.h"
 
-
-
 int main() {
     int choix;
     char chemin[256];
 
-    printf("\nQuel automate tu veux utilise?:  ");
+    printf("\nQuel automate tu veux utiliser?:  ");
     scanf("%d", &choix);
 
     sprintf(chemin, "../Automates/automate%d.txt", choix);
@@ -17,42 +15,52 @@ int main() {
 
     afficher_automate(AF);
     if (est_standard(AF)) {
-        printf("\n➡️ L'automate est STANDARDISE\n");
+        printf("\nL'automate est STANDARDISE\n");
     } else {
-        printf("\n➡️ L'automate n'est PAS standardise\n");
+        printf("\n L'automate n'est PAS standardise\n");
         Automate *AS = standardisation(AF);
 
         printf("\n===== AUTOMATE STANDARDISE =====\n");
         afficher_automate(AS);
 
-        free(AF);
-        AF = AS;
+        free(AS);
     }
 
-    Automate *AFDC;
+    Automate *AFDC=NULL;
 
     if (est_deterministe(AF)) {
 
-        printf("✔️ Automate déterministe\n");
+        printf(" Automate DETERMINISTE\n");
 
         if (est_complet(AF)) {
-            printf("✔️ Automate complet\n");
+            printf(" Automate COMPLET\n");
             AFDC = AF;
         } else {
-            printf("❌ Automate non complet\n");
+            printf("Automate NON complet\n");
             AFDC = completion(AF);
+
+            printf(" Automate NON deterministe\n");
+            AFDC = determinisation_et_completion_automate(AF);
+
+            printf("\n===== AUTOMATE DETERMINISTE COMPLET =====\n");
+            afficher_automate_deterministe_complet(AFDC);
         }
 
     } else {
+        printf(" Automate NON deterministe -> determinisation +completion\n");
+        AFDC=determinisation_et_completion_automate(AF);
 
-        printf("❌ Automate non déterministe\n");
-        AFDC = determinisation_et_completion_automate(AF);
+        printf("\n=====AUTOMATE DETERMINISTE COMPLET =====\n");
+        afficher_automate_deterministe_complet(AFDC);
     }
 
-    afficher_automate_deterministe_complet(AFDC);
+    // ---- Minimisation ----
+    Automate *AFDCM = minimisation(AFDC);
+    afficher_automate_minimal(AFDCM, AFDC, get_correspondance(), AFDC->nb_etats);
 
-    if (AFDC != AF)
-        free(AFDC);
-
+    if (AFDCM != AFDC) free(AFDCM);
+    if (AFDC != AF) free(AFDC);
     free(AF);
+
+    return 0;
 }
