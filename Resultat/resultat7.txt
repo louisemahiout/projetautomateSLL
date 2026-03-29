@@ -1,0 +1,86 @@
+
+Quel automate veux tu utiliser ?:7
+
+
+===== Affichage de l'automate =====
+
+                         | a                 |
+---------------------------------------------
+E 1                      | 1,0               |
+ S0                      | --                |
+L'automate n'est PAS standardise
+
+===== AUTOMATE STANDARDISE =====
+
+                         | a                 |
+---------------------------------------------
+  1                      | 1,0               |
+ S0                      | --                |
+E I                      | 1,0               |
+Automate non deterministe
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 |
+---------------------------------------------
+E 1                      | 1.0               |
+ S1.0                    | 1.0               |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 |
+---------------------------------------------
+ES1                      | 1.0               |
+  1.0                    | 1.0               |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 1 }
+    G1 = { 1.0 }
+
+  Transitions par classes (P0) :
+  Etat          a           Classe
+  --------------------------------
+  1             G1          G0
+  1.0           G1          G1
+
+  -> Partition stable atteinte en 1 iteration(s).
+
+  L'automate etait deja minimal (aucun etat fusionne).
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 |
+---------------------------------------------
+E q0                     | q1                |
+ Sq1                     | q1                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  1                            -> q0
+  1.0                          -> q1
+Entrez un mot :a
+
+ "a" : OUI
+
+Entrez un mot :b
+
+ "b" : NON
+
+Entrez un mot :ab
+
+ "ab" : NON
+
+Entrez un mot :aa
+
+ "aa" : OUI
+
+Entrez un mot :fin
+
+
+Voulez-vous traiter un autre automate ? (oui/non) :non
+
+Au revoir !
+

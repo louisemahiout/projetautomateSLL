@@ -1,0 +1,89 @@
+
+Quel automate veux tu utiliser ?:3
+
+
+===== Affichage de l'automate =====
+
+                         | a                 |
+---------------------------------------------
+E 0                      | 1                 |
+ S1                      | --                |
+L'automate est STANDARDISE
+Automate deterministe
+Automate non complet
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 |
+---------------------------------------------
+E 0                      | 1                 |
+ S1                      | P                 |
+  P                      | P                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 |
+---------------------------------------------
+ES0                      | 1                 |
+  1                      | P                 |
+ SP                      | P                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 0 P }
+    G1 = { 1 }
+
+  Transitions par classes (P0) :
+  Etat          a           Classe
+  --------------------------------
+  0             G1          G0
+  1             G0          G1
+  P             G0          G0
+
+  Partition P1 :
+    G0 = { 0 }
+    G1 = { 1 }
+    G2 = { P }
+
+  Transitions par classes (P1) :
+  Etat          a           Classe
+  --------------------------------
+  0             G1          G0
+  1             G2          G1
+  P             G2          G2
+
+  -> Partition stable atteinte en 2 iteration(s).
+
+  L'automate etait deja minimal (aucun etat fusionne).
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 |
+---------------------------------------------
+E q0                     | q1                |
+ Sq1                     | q2                |
+  q2                     | q2                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+  1                            -> q1
+  P                            -> q2
+Entrez un mot :a
+
+ "a" : OUI
+
+Entrez un mot :ab
+
+ "ab" : NON
+
+Entrez un mot :b
+
+ "b" : NON
+
+Entrez un mot :fin
+
+
+Voulez-vous traiter un autre automate ? (oui/non) :

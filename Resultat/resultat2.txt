@@ -1,0 +1,71 @@
+
+Quel automate veux tu utiliser ?:2
+
+
+===== Affichage de l'automate =====
+
+                         | a                 |
+---------------------------------------------
+ES0                      | 0                 |
+L'automate n'est PAS standardise
+
+===== AUTOMATE STANDARDISE =====
+
+                         | a                 |
+---------------------------------------------
+ S0                      | 0                 |
+ESI                      | 0                 |
+Automate deterministe
+Automate complet
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 |
+---------------------------------------------
+ES0                      | 0                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 |
+---------------------------------------------
+E 0                      | 0                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 0 }
+
+  Transitions par classes (P0) :
+  Etat          a           Classe
+  --------------------------------
+  0             G0          G0
+
+  -> Partition stable atteinte en 1 iteration(s).
+
+  L'automate etait deja minimal (aucun etat fusionne).
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 |
+---------------------------------------------
+ESq0                     | q0                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+Entrez un mot :a
+
+ "a" : OUI
+
+Entrez un mot :ab
+
+ "ab" : NON
+
+Entrez un mot :b
+
+ "b" : NON
+
+Entrez un mot :fin
+
+
