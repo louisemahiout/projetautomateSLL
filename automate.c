@@ -579,3 +579,282 @@ int reconnaitre_mot(Automate *A, char *mot) {
     }
     return est_final(A, etat_courant);
 }
+
+/* =========================================================
+ * minimisation
+ * ---------------------------------------------------------
+ * Algorithme de Moore (raffinement de partitions).
+ *
+ * Entrée  : AFDC — automate déterministe complet
+ * Sortie  : AFDCM — automate minimal équivalent
+ *
+ * Affiche chaque partition numérotée + transitions en termes de classes.
+ * La correspondance état_AFDC → classe est stockée dans _corr[].
+ * ========================================================= */
+
+/* Tableau statique partagé avec main via get_correspondance() */
+static int _corr[MAX_ETATS];
+static int _nb_classes_global;
+
+/* Affiche une partition et les transitions exprimées en classes */
+static void afficher_partition(Automate *AFDC, int classe[],
+                               int nb_classes, int num_partition) {
+    int n = AFDC->nb_etats;
+
+    printf("\n  Partition P%d :\n", num_partition);
+    for (int c = 0; c < nb_classes; c++) {
+        printf("    G%d = { ", c);
+        for (int i = 0; i < n; i++)
+            if (classe[i] == c) printf("%s ", AFDC->etats[i]);
+        printf("}\n");
+    }
+
+    /* Transitions exprimées en classes */
+    printf("\n  Transitions par classes (P%d) :\n", num_partition);
+    /* Largeur de colonne : 12 pour l'état, 12 par symbole */
+    printf("  %-12s", "Etat");
+    for (int s = 0; s < AFDC->nb_symboles; s++)
+        printf("  %-10s", AFDC->symboles[s]);
+    printf("  Classe\n");
+    printf("  ");
+    for (int x = 0; x < 12 + 12 * AFDC->nb_symboles + 8; x++) printf("-");
+    printf("\n");
+
+    for (int i = 0; i < n; i++) {
+        printf("  %-12s", AFDC->etats[i]);
+        for (int s = 0; s < AFDC->nb_symboles; s++) {
+            if (AFDC->nb_transitions[i][s] == 0) {
+                printf("  %-10s", "--");
+            } else {
+                char *dest = AFDC->transitions[i][s][0];
+                int cl = -1;
+                for (int x = 0; x < n; x++)
+                    if (strcmp(AFDC->etats[x], dest) == 0) { cl = classe[x]; break; }
+                char buf[16];
+                sprintf(buf, "G%d", cl);
+                printf("  %-10s", buf);
+            }
+        }
+        printf("  G%d\n", classe[i]);
+    }
+}
+
+Automate* minimisation(Automate *AFDC) {
+
+    int n = AFDC->nb_etats;
+
+    /* --------------------------------------------------
+     * 1. Partition initiale P0
+     *    Principe : séparer finaux (G1) et non-finaux (G0).
+     *    Cas dégénérés : tous finaux → une seule classe G0
+     *                    aucun final → une seule classe G0
+     * -------------------------------------------------- */
+    int classe[MAX_ETATS];
+    int nb_classes;
+
+    /* Compter finaux et non-finaux */
+    int nb_finaux_AFDC = 0, nb_non_finaux_AFDC = 0;
+    for (int i = 0; i < n; i++) {
+        if (est_final(AFDC, AFDC->etats[i])) nb_finaux_AFDC++;
+        else nb_non_finaux_AFDC++;
+    }
+
+    if (nb_finaux_AFDC == 0 || nb_non_finaux_AFDC == 0) {
+        /* Une seule classe */
+        nb_classes = 1;
+        for (int i = 0; i < n; i++) classe[i] = 0;
+    } else {
+        /* Deux classes : 0 = non-finaux, 1 = finaux */
+        nb_classes = 2;
+        for (int i = 0; i < n; i++)
+            classe[i] = est_final(AFDC, AFDC->etats[i]) ? 1 : 0;
+    }
+
+    printf("\n========== MINIMISATION ==========\n");
+    afficher_partition(AFDC, classe, nb_classes, 0);
+
+    /* --------------------------------------------------
+     * 2. Raffinement itératif jusqu'à stabilité
+     * -------------------------------------------------- */
+    int iteration = 1;
+    int stable = 0;
+
+    while (!stable) {
+
+        int new_classe[MAX_ETATS];
+        int new_nb = 0;
+        int marque[MAX_ETATS];
+        for (int i = 0; i < n; i++) marque[i] = -1;
+
+        for (int i = 0; i < n; i++) {
+            if (marque[i] != -1) continue;
+
+            /* Nouvelle classe pour l'état i */
+            int ma_classe = new_nb++;
+            marque[i] = ma_classe;
+            new_classe[i] = ma_classe;
+
+            /* Regrouper tous les j de même ancienne classe
+               ET même profil de transitions (destinations dans même classe) */
+            for (int j = i + 1; j < n; j++) {
+                if (marque[j] != -1) continue;
+                if (classe[j] != classe[i]) continue;
+
+                int meme = 1;
+                for (int s = 0; s < AFDC->nb_symboles && meme; s++) {
+                    /* Classe destination de i par s */
+                    int cl_i = -1;
+                    if (AFDC->nb_transitions[i][s] > 0) {
+                        char *d = AFDC->transitions[i][s][0];
+                        for (int x = 0; x < n; x++)
+                            if (strcmp(AFDC->etats[x], d) == 0) { cl_i = classe[x]; break; }
+                    }
+                    /* Classe destination de j par s */
+                    int cl_j = -1;
+                    if (AFDC->nb_transitions[j][s] > 0) {
+                        char *d = AFDC->transitions[j][s][0];
+                        for (int x = 0; x < n; x++)
+                            if (strcmp(AFDC->etats[x], d) == 0) { cl_j = classe[x]; break; }
+                    }
+                    if (cl_i != cl_j) meme = 0;
+                }
+
+                if (meme) {
+                    marque[j] = ma_classe;
+                    new_classe[j] = ma_classe;
+                }
+            }
+        }
+
+        /* La partition est stable si aucun état n'a changé de groupe */
+        stable = 1;
+        for (int i = 0; i < n && stable; i++)
+            for (int j = i + 1; j < n && stable; j++)
+                if ((classe[i] == classe[j]) != (new_classe[i] == new_classe[j]))
+                    stable = 0;
+
+        for (int i = 0; i < n; i++) classe[i] = new_classe[i];
+        nb_classes = new_nb;
+
+        if (!stable) {
+            afficher_partition(AFDC, classe, nb_classes, iteration);
+            iteration++;
+        }
+    }
+
+    printf("\n  → Partition stable atteinte en %d iteration(s).\n", iteration);
+
+    /* Sauvegarder la correspondance */
+    for (int i = 0; i < n; i++) _corr[i] = classe[i];
+    _nb_classes_global = nb_classes;
+
+    /* --------------------------------------------------
+     * 3. Construire l'automate minimal AFDCM
+     * -------------------------------------------------- */
+    Automate *M = malloc(sizeof(Automate));
+    if (!M) { printf("Erreur malloc minimisation\n"); exit(1); }
+
+    for (int i = 0; i < MAX_ETATS; i++)
+        for (int j = 0; j < MAX_SYMBOLES; j++)
+            M->nb_transitions[i][j] = 0;
+
+    /* Alphabet identique (sans ε, AFDC en est déjà débarrassé) */
+    M->nb_symboles = AFDC->nb_symboles;
+    for (int i = 0; i < AFDC->nb_symboles; i++)
+        strcpy(M->symboles[i], AFDC->symboles[i]);
+
+    /* Un état par classe, nommé "q0", "q1", ... */
+    M->nb_etats = nb_classes;
+    for (int c = 0; c < nb_classes; c++) {
+        char nom[16];
+        sprintf(nom, "q%d", c);
+        strcpy(M->etats[c], nom);
+    }
+
+    /* État initial = classe contenant l'état initial de AFDC */
+    M->nb_initiaux = 0;
+    for (int i = 0; i < AFDC->nb_initiaux; i++) {
+        for (int x = 0; x < n; x++) {
+            if (strcmp(AFDC->etats[x], AFDC->initiaux[i]) == 0) {
+                char nom[16];
+                sprintf(nom, "q%d", classe[x]);
+                int doublon = 0;
+                for (int k = 0; k < M->nb_initiaux; k++)
+                    if (strcmp(M->initiaux[k], nom) == 0) { doublon = 1; break; }
+                if (!doublon)
+                    strcpy(M->initiaux[M->nb_initiaux++], nom);
+                break;
+            }
+        }
+    }
+
+    /* États finaux = classes contenant au moins un état final de AFDC */
+    M->nb_finaux = 0;
+    int classe_finale[MAX_ETATS] = {0};
+    for (int i = 0; i < n; i++) {
+        if (est_final(AFDC, AFDC->etats[i]) && !classe_finale[classe[i]]) {
+            classe_finale[classe[i]] = 1;
+            char nom[16];
+            sprintf(nom, "q%d", classe[i]);
+            strcpy(M->finaux[M->nb_finaux++], nom);
+        }
+    }
+
+    /* Transitions : représentant de chaque classe */
+    for (int c = 0; c < nb_classes; c++) {
+        int rep = -1;
+        for (int i = 0; i < n; i++)
+            if (classe[i] == c) { rep = i; break; }
+        if (rep == -1) continue;
+
+        for (int s = 0; s < AFDC->nb_symboles; s++) {
+            if (AFDC->nb_transitions[rep][s] == 0) continue;
+            char *dest = AFDC->transitions[rep][s][0];
+            for (int x = 0; x < n; x++) {
+                if (strcmp(AFDC->etats[x], dest) == 0) {
+                    char nom_dest[16];
+                    sprintf(nom_dest, "q%d", classe[x]);
+                    strcpy(M->transitions[c][s][0], nom_dest);
+                    M->nb_transitions[c][s] = 1;
+                    break;
+                }
+            }
+        }
+    }
+
+    return M;
+}
+
+/* =========================================================
+ * afficher_automate_minimal
+ * ---------------------------------------------------------
+ * Affiche AFDCM + message "déjà minimal" si applicable
+ * + table de correspondance AFDC → AFDCM.
+ * ========================================================= */
+void afficher_automate_minimal(Automate *AFDCM, Automate *AFDC,
+                               int correspondance[], int nb_etats_AFDC) {
+    if (AFDCM->nb_etats == AFDC->nb_etats)
+        printf("\n  L'automate etait deja minimal (aucun etat fusionne).\n");
+    else
+        printf("\n  %d etat(s) fusionne(s) : %d → %d etats.\n",
+               AFDC->nb_etats - AFDCM->nb_etats,
+               AFDC->nb_etats, AFDCM->nb_etats);
+
+    printf("\n===== AUTOMATE MINIMAL (AFDCM) =====\n");
+    afficher_automate(AFDCM);
+
+    printf("\n  Table de correspondance AFDC → AFDCM :\n");
+    printf("  %-28s → %s\n", "Etat AFDC", "Etat AFDCM");
+    printf("  ");
+    for (int i = 0; i < 40; i++) printf("-");
+    printf("\n");
+    for (int i = 0; i < nb_etats_AFDC; i++) {
+        char nom_classe[16];
+        sprintf(nom_classe, "q%d", correspondance[i]);
+        printf("  %-28s → %s\n", AFDC->etats[i], nom_classe);
+    }
+}
+
+/* Accesseurs pour récupérer la correspondance depuis main.c */
+int* get_correspondance(void)     { return _corr; }
+int  get_nb_classes(void)         { return _nb_classes_global; }

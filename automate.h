@@ -7,7 +7,7 @@
 
 #define MAX_ETATS    100
 #define MAX_SYMBOLES 26
-#define MAX_NOM       20
+#define MAX_NOM       60
 
 typedef struct {
     int  nb_symboles;
@@ -28,7 +28,7 @@ typedef struct {
 } Automate;
 
 /* fonctions */
-int      est_initial(Automate *A, char *etat);
+int est_initial(Automate *A, char *etat);
 int      est_final(Automate *A, char *etat);
 void     epsilon_fermeture(Automate *A, int src, int fermeture[], int *taille);
 void     afficher_automate(Automate *A);
@@ -43,5 +43,11 @@ void     afficher_automate_deterministe_complet(Automate *A);
 void lire_mot(char *mot);
 int reconnaitre_mot(Automate *A, char *mot);
 
-
+// Minimisation
+Automate* minimisation(Automate *AFDC);
+void afficher_automate_minimal(Automate *AFDCM, Automate *AFDC, int correspondance[], int nb_etats_AFDC);
+int* get_correspondance(void);
+int  get_nb_classes(void);
 #endif
+
+

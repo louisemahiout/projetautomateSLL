@@ -3,13 +3,10 @@
 #include <stdlib.h>
 #include "automate.h"
 
-
-
 int main() {
     int choix;
     char chemin[256];
     char mot[256];
-
 
     printf("\nQuel automate tu veux utilise?:  ");
     scanf("%d", &choix);
@@ -53,6 +50,10 @@ int main() {
 
     afficher_automate_deterministe_complet(AFDC);
 
+    // ---- Minimisation ----
+    Automate *AFDCM = minimisation(AFDC);
+    afficher_automate_minimal(AFDCM, AFDC,
+                              get_correspondance(), AFDC->nb_etats);
     while (getchar() != '\n');
     lire_mot(mot);
     while (strcmp(mot, "fin") != 0) {
@@ -63,8 +64,9 @@ int main() {
         lire_mot(mot);
     }
 
-    if (AFDC != AF)
-        free(AFDC);
-
+    if (AFDCM != AFDC) free(AFDCM);
+    if (AFDC != AF) free(AFDC);
     free(AF);
+
+    return 0;
 }
