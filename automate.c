@@ -858,3 +858,27 @@ void afficher_automate_minimal(Automate *AFDCM, Automate *AFDC,
 /* Accesseurs pour récupérer la correspondance depuis main.c */
 int* get_correspondance(void)     { return _corr; }
 int  get_nb_classes(void)         { return _nb_classes_global; }
+
+Automate* automate_complementaire(Automate *A) {
+
+    Automate *B = malloc(sizeof(Automate));
+    if (!B) {
+        printf("Erreur malloc\n");
+        exit(1);
+    }
+
+    // 🔹 Copier l'automate
+    *B = *A;
+
+    // 🔹 Nouveaux états finaux = ceux qui ne sont PAS finaux
+    B->nb_finaux = 0;
+
+    for (int i = 0; i < B->nb_etats; i++) {
+
+        if (!est_final(A, B->etats[i])) {
+            strcpy(B->finaux[B->nb_finaux++], B->etats[i]);
+        }
+    }
+
+    return B;
+}

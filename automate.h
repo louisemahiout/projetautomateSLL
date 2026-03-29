@@ -48,6 +48,7 @@ Automate* minimisation(Automate *AFDC);
 void afficher_automate_minimal(Automate *AFDCM, Automate *AFDC, int correspondance[], int nb_etats_AFDC);
 int* get_correspondance(void);
 int  get_nb_classes(void);
+Automate* automate_complementaire(Automate *A);
 #endif
 
 

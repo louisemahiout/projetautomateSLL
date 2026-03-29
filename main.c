@@ -49,6 +49,14 @@ int main() {
 
     afficher_automate_deterministe_complet(AFDC);
 
+    // ---- Complémentaire ----
+    Automate *AComp = automate_complementaire(AFDC);
+
+    printf("\n===== AUTOMATE COMPLEMENTAIRE =====\n");
+    afficher_automate(AComp);
+
+    free(AComp);
+
     // ---- Minimisation ----
     Automate *AFDCM = minimisation(AFDC);
     afficher_automate_minimal(AFDCM, AFDC,
