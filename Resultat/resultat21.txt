@@ -1,0 +1,140 @@
+Quel automate veux tu utiliser ?:21
+
+
+===== Affichage de l'automate =====
+
+                         | a                 | b                 | c                 | d                 |
+---------------------------------------------------------------------------------------------------------
+  0                      | --                | --                | --                | 1                 |
+ES1                      | 2                 | --                | --                | --                |
+  2                      | --                | 3                 | --                | --                |
+  3                      | --                | --                | 0                 | --                |
+L'automate n'est PAS standardise
+
+===== AUTOMATE STANDARDISE =====
+
+                         | a                 | b                 | c                 | d                 |
+---------------------------------------------------------------------------------------------------------
+  0                      | --                | --                | --                | 1                 |
+ S1                      | 2                 | --                | --                | --                |
+  2                      | --                | 3                 | --                | --                |
+  3                      | --                | --                | 0                 | --                |
+ESI                      | 2                 | --                | --                | --                |
+Automate deterministe
+Automate non complet
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 | b                 | c                 | d                 |
+---------------------------------------------------------------------------------------------------------
+  0                      | P                 | P                 | P                 | 1                 |
+ES1                      | 2                 | P                 | P                 | P                 |
+  2                      | P                 | 3                 | P                 | P                 |
+  3                      | P                 | P                 | 0                 | P                 |
+  P                      | P                 | P                 | P                 | P                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 | b                 | c                 | d                 |
+---------------------------------------------------------------------------------------------------------
+ S0                      | P                 | P                 | P                 | 1                 |
+E 1                      | 2                 | P                 | P                 | P                 |
+ S2                      | P                 | 3                 | P                 | P                 |
+ S3                      | P                 | P                 | 0                 | P                 |
+ SP                      | P                 | P                 | P                 | P                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 0 2 3 P }
+    G1 = { 1 }
+
+  Transitions par classes (P0) :
+  Etat          a           b           c           d           Classe
+  --------------------------------------------------------------------
+  0             G0          G0          G0          G1          G0
+  1             G0          G0          G0          G0          G1
+  2             G0          G0          G0          G0          G0
+  3             G0          G0          G0          G0          G0
+  P             G0          G0          G0          G0          G0
+
+  Partition P1 :
+    G0 = { 0 }
+    G1 = { 1 }
+    G2 = { 2 3 P }
+
+  Transitions par classes (P1) :
+  Etat          a           b           c           d           Classe
+  --------------------------------------------------------------------
+  0             G2          G2          G2          G1          G0
+  1             G2          G2          G2          G2          G1
+  2             G2          G2          G2          G2          G2
+  3             G2          G2          G0          G2          G2
+  P             G2          G2          G2          G2          G2
+
+  Partition P2 :
+    G0 = { 0 }
+    G1 = { 1 }
+    G2 = { 2 P }
+    G3 = { 3 }
+
+  Transitions par classes (P2) :
+  Etat          a           b           c           d           Classe
+  --------------------------------------------------------------------
+  0             G2          G2          G2          G1          G0
+  1             G2          G2          G2          G2          G1
+  2             G2          G3          G2          G2          G2
+  3             G2          G2          G0          G2          G3
+  P             G2          G2          G2          G2          G2
+
+  Partition P3 :
+    G0 = { 0 }
+    G1 = { 1 }
+    G2 = { 2 }
+    G3 = { 3 }
+    G4 = { P }
+
+  Transitions par classes (P3) :
+  Etat          a           b           c           d           Classe
+  --------------------------------------------------------------------
+  0             G4          G4          G4          G1          G0
+  1             G2          G4          G4          G4          G1
+  2             G4          G3          G4          G4          G2
+  3             G4          G4          G0          G4          G3
+  P             G4          G4          G4          G4          G4
+
+  -> Partition stable atteinte en 4 iteration(s).
+
+  L'automate etait deja minimal (aucun etat fusionne).
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 | b                 | c                 | d                 |
+---------------------------------------------------------------------------------------------------------
+  q0                     | q4                | q4                | q4                | q1                |
+ESq1                     | q2                | q4                | q4                | q4                |
+  q2                     | q4                | q3                | q4                | q4                |
+  q3                     | q4                | q4                | q0                | q4                |
+  q4                     | q4                | q4                | q4                | q4                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+  1                            -> q1
+  2                            -> q2
+  3                            -> q3
+  P                            -> q4
+Entrez un mot :e
+
+ "e" : OUI
+
+Entrez un mot :abcd
+
+ "abcd" : OUI
+
+Entrez un mot :a
+
+ "a" : NON
+
+Entrez un mot :fin
