@@ -7,6 +7,7 @@
 
 #define MAX_ETATS    100
 #define MAX_SYMBOLES 26
+#define MAX_NOM       20
 
 typedef struct {
     int  nb_symboles;
@@ -39,5 +40,8 @@ Automate* completion(Automate *A);
 Automate* determinisation_et_completion_automate(Automate *A);
 Automate* standardisation(Automate *A);
 void     afficher_automate_deterministe_complet(Automate *A);
+void lire_mot(char *mot);
+int reconnaitre_mot(Automate *A, char *mot);
+
 
 #endif
