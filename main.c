@@ -3,7 +3,42 @@
 #include <stdlib.h>
 #include "automate.h"
 
+/*
+Lecture d’un fichier .txt décrivant un automate :
 
+Ligne 1 :
+    - Premier nombre : nombre de symboles dans l'alphabet
+      puis? les symboles eux-mêmes
+    - Sert à construire l’alphabet de l’automate
+
+Ligne 2 :
+    - Premier nombre : nombre total d’états
+      Puis, les noms/indices des états
+    - Sert à initialiser tous les états de l’automate
+
+Ligne 3 :
+    - Premier nombre : nombre d’états initiaux
+    PUIS? LA liste des états initiaux
+    - Sert à définir l’état de départ de l’automate
+
+Ligne 4 :
+    - Premier nombre : nombre d’états finaux
+    puis la liste des états finaux (ici l’état '7')
+    - Sert à définir les états acceptants de l’automate
+
+Ligne 5 :
+    - Indique le nombre total de transitions (ici 12)
+    - Sert à savoir combien de lignes suivantes contiennent des transitions
+
+Lignes suivantes sont les differents transitions
+    - Format de chaque ligne : "état_source + symbole + état_destination"
+    - Exemple :
+        "0ε1"  -> de l’état 0, sur le symbole ε, on va à l’état 1
+        "2b1"  -> de l’état 2, sur le symbole b, on va à l’état 1
+Remarques :
+    - 'ε' est un symbole spécial pour les transitions epsilon
+    - Les premières lignes servent à préparer l’automate avant de lire les transitions
+*/
 
 int main() {
     int choix;
