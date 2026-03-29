@@ -742,7 +742,7 @@ Automate* minimisation(Automate *AFDC) {
         }
     }
 
-    printf("\n  → Partition stable atteinte en %d iteration(s).\n", iteration);
+    printf("\n  -> Partition stable atteinte en %d iteration(s).\n", iteration);
 
     /* Sauvegarder la correspondance */
     for (int i = 0; i < n; i++) _corr[i] = classe[i];
@@ -836,22 +836,22 @@ void afficher_automate_minimal(Automate *AFDCM, Automate *AFDC,
     if (AFDCM->nb_etats == AFDC->nb_etats)
         printf("\n  L'automate etait deja minimal (aucun etat fusionne).\n");
     else
-        printf("\n  %d etat(s) fusionne(s) : %d → %d etats.\n",
+        printf("\n  %d etat(s) fusionne(s) : %d -> %d etats.\n",
                AFDC->nb_etats - AFDCM->nb_etats,
                AFDC->nb_etats, AFDCM->nb_etats);
 
     printf("\n===== AUTOMATE MINIMAL (AFDCM) =====\n");
     afficher_automate(AFDCM);
 
-    printf("\n  Table de correspondance AFDC → AFDCM :\n");
-    printf("  %-28s → %s\n", "Etat AFDC", "Etat AFDCM");
+    printf("\n  Table de correspondance AFDC -> AFDCM :\n");
+    printf("  %-28s -> %s\n", "Etat AFDC", "Etat AFDCM");
     printf("  ");
     for (int i = 0; i < 40; i++) printf("-");
     printf("\n");
     for (int i = 0; i < nb_etats_AFDC; i++) {
         char nom_classe[16];
         sprintf(nom_classe, "q%d", correspondance[i]);
-        printf("  %-28s → %s\n", AFDC->etats[i], nom_classe);
+        printf("  %-28s -> %s\n", AFDC->etats[i], nom_classe);
     }
 }
 
