@@ -1,0 +1,152 @@
+Quel automate veux tu utiliser ?:28
+
+
+===== Affichage de l'automate =====
+
+                         | a                 |
+---------------------------------------------
+ S0                      | 4                 |
+E 1                      | 2,4               |
+  2                      | 3                 |
+ S3                      | 2                 |
+  4                      | 5                 |
+  5                      | 0                 |
+L'automate est STANDARDISE
+Automate non deterministe
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 |
+---------------------------------------------
+E 1                      | 2.4               |
+  2.4                    | 3.5               |
+ S3.5                    | 0.2               |
+ S0.2                    | 3.4               |
+ S3.4                    | 2.5               |
+  2.5                    | 0.3               |
+ S0.3                    | 2.4               |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 |
+---------------------------------------------
+ES1                      | 2.4               |
+ S2.4                    | 3.5               |
+  3.5                    | 0.2               |
+  0.2                    | 3.4               |
+  3.4                    | 2.5               |
+ S2.5                    | 0.3               |
+  0.3                    | 2.4               |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 1 2.4 2.5 }
+    G1 = { 3.5 0.2 3.4 0.3 }
+
+  Transitions par classes (P0) :
+  Etat          a           Classe
+  --------------------------------
+  1             G0          G0
+  2.4           G1          G0
+  3.5           G1          G1
+  0.2           G1          G1
+  3.4           G0          G1
+  2.5           G1          G0
+  0.3           G0          G1
+
+  Partition P1 :
+    G0 = { 1 }
+    G1 = { 2.4 2.5 }
+    G2 = { 3.5 0.2 }
+    G3 = { 3.4 0.3 }
+
+  Transitions par classes (P1) :
+  Etat          a           Classe
+  --------------------------------
+  1             G1          G0
+  2.4           G2          G1
+  3.5           G2          G2
+  0.2           G3          G2
+  3.4           G1          G3
+  2.5           G3          G1
+  0.3           G1          G3
+
+  Partition P2 :
+    G0 = { 1 }
+    G1 = { 2.4 }
+    G2 = { 3.5 }
+    G3 = { 0.2 }
+    G4 = { 3.4 0.3 }
+    G5 = { 2.5 }
+
+  Transitions par classes (P2) :
+  Etat          a           Classe
+  --------------------------------
+  1             G1          G0
+  2.4           G2          G1
+  3.5           G3          G2
+  0.2           G4          G3
+  3.4           G5          G4
+  2.5           G4          G5
+  0.3           G1          G4
+
+  Partition P3 :
+    G0 = { 1 }
+    G1 = { 2.4 }
+    G2 = { 3.5 }
+    G3 = { 0.2 }
+    G4 = { 3.4 }
+    G5 = { 2.5 }
+    G6 = { 0.3 }
+
+  Transitions par classes (P3) :
+  Etat          a           Classe
+  --------------------------------
+  1             G1          G0
+  2.4           G2          G1
+  3.5           G3          G2
+  0.2           G4          G3
+  3.4           G5          G4
+  2.5           G6          G5
+  0.3           G1          G6
+
+  -> Partition stable atteinte en 4 iteration(s).
+
+  L'automate etait deja minimal (aucun etat fusionne).
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 |
+---------------------------------------------
+E q0                     | q1                |
+  q1                     | q2                |
+ Sq2                     | q3                |
+ Sq3                     | q4                |
+ Sq4                     | q5                |
+  q5                     | q6                |
+ Sq6                     | q1                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  1                            -> q0
+  2.4                          -> q1
+  3.5                          -> q2
+  0.2                          -> q3
+  3.4                          -> q4
+  2.5                          -> q5
+  0.3                          -> q6
+Entrez un mot :e
+
+ "e" : NON
+
+Entrez un mot :aaaa
+
+ "aaaa" : OUI
+
+Entrez un mot :b
+
+ "b" : NON
+
+Entrez un mot :fin
