@@ -11,14 +11,16 @@ int main() {
     printf("\nQuel automate tu veux utilise?:  ");
     scanf("%d", &choix);
 
+    printf("\n===== Affichage de l'automate =====\n");
     sprintf(chemin, "../Automates/automate%d.txt", choix);
+
     Automate *AF = lire_automate_sur_fichier(chemin);
 
     afficher_automate(AF);
     if (est_standard(AF)) {
-        printf("\n➡️ L'automate est STANDARDISE\n");
+        printf("L'automate est STANDARDISE\n");
     } else {
-        printf("\n➡️ L'automate n'est PAS standardise\n");
+        printf("L'automate n'est PAS standardise\n");
         Automate *AS = standardisation(AF);
 
         printf("\n===== AUTOMATE STANDARDISE =====\n");

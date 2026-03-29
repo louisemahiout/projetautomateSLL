@@ -3,6 +3,7 @@
 #define LARGEUR_ETAT 25
 #define LARGEUR_COL  20
 #define MAX_LIGNES   50
+
 int est_initial(Automate *A, char *etat) {
     for (int i = 0; i < A->nb_initiaux; i++)
         if (strcmp(A->initiaux[i], etat) == 0)
