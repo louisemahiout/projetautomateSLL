@@ -556,9 +556,55 @@ int reconnaitre_mot(Automate *A, char *mot) {
     char symbole[5];
     char etat_courant[MAX_NOM];
     strcpy(etat_courant, A->initiaux[0]);
+
+    // 🔹 CAS 1 : mot vide (ε, e ou entrée vide)
+    if (
+        strcmp(mot, "e") == 0 ||
+        (unsigned char)mot[0] == 0xCE && (unsigned char)mot[1] == 0xB5 && mot[2] == '\0' ||
+        mot[0] == '\0'
+    ) {
+        // ✔️ si état initial est final
+        if (est_final(A, etat_courant))
+            return 1;
+
+        // ✔️ ε-fermeture
+        int idx_init = -1;
+        for (int i = 0; i < A->nb_etats; i++) {
+            if (strcmp(A->etats[i], etat_courant) == 0) {
+                idx_init = i;
+                break;
+            }
+        }
+
+        if (idx_init != -1) {
+            int fermeture[MAX_ETATS];
+            int taille = 0;
+
+            epsilon_fermeture(A, idx_init, fermeture, &taille);
+
+            for (int i = 0; i < taille; i++) {
+                if (est_final(A, A->etats[fermeture[i]]))
+                    return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    // 🔹 CAS normal
     for (int c = 0; mot[c] != '\0';) {
-        symbole[0] = mot[c++];
-        symbole[1] = '\0';
+
+        // 🔥 gestion UTF-8 pour ε
+        if ((unsigned char)mot[c] == 0xCE && (unsigned char)mot[c+1] == 0xB5) {
+            symbole[0] = mot[c];
+            symbole[1] = mot[c+1];
+            symbole[2] = '\0';
+            c += 2;
+        } else {
+            symbole[0] = mot[c++];
+            symbole[1] = '\0';
+        }
+
         int col = -1;
         for (int j = 0; j < A->nb_symboles; j++) {
             if (strcmp(A->symboles[j], symbole) == 0) {
@@ -566,7 +612,9 @@ int reconnaitre_mot(Automate *A, char *mot) {
                 break;
             }
         }
+
         if (col == -1) return 0;
+
         int idx = -1;
         for (int i = 0; i < A->nb_etats; i++) {
             if (strcmp(A->etats[i], etat_courant) == 0) {
@@ -574,10 +622,39 @@ int reconnaitre_mot(Automate *A, char *mot) {
                 break;
             }
         }
-        if (idx == -1 || A->nb_transitions[idx][col] == 0) return 0;
+
+        if (idx == -1 || A->nb_transitions[idx][col] == 0)
+            return 0;
+
         strcpy(etat_courant, A->transitions[idx][col][0]);
     }
-    return est_final(A, etat_courant);
+
+    // 🔹 état final direct
+    if (est_final(A, etat_courant))
+        return 1;
+
+    // 🔹 ε après lecture
+    int idx = -1;
+    for (int i = 0; i < A->nb_etats; i++) {
+        if (strcmp(A->etats[i], etat_courant) == 0) {
+            idx = i;
+            break;
+        }
+    }
+
+    if (idx != -1) {
+        int fermeture[MAX_ETATS];
+        int taille = 0;
+
+        epsilon_fermeture(A, idx, fermeture, &taille);
+
+        for (int i = 0; i < taille; i++) {
+            if (est_final(A, A->etats[fermeture[i]]))
+                return 1;
+        }
+    }
+
+    return 0;
 }
 
 /* =========================================================
