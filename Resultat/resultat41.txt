@@ -1,0 +1,100 @@
+Quel automate veux tu utiliser ?:41
+
+
+===== Affichage de l'automate =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E 0                      | 1                 | 4                 |
+ S1                      | 2                 | 3                 |
+ S2                      | 2                 | 3                 |
+ S3                      | p                 | p                 |
+ S4                      | p                 | p                 |
+  p                      | p                 | p                 |
+L'automate est STANDARDISE
+Automate deterministe
+Automate complet
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E 0                      | 1                 | 4                 |
+ S1                      | 2                 | 3                 |
+ S2                      | 2                 | 3                 |
+ S3                      | p                 | p                 |
+ S4                      | p                 | p                 |
+  p                      | p                 | p                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+ES0                      | 1                 | 4                 |
+  1                      | 2                 | 3                 |
+  2                      | 2                 | 3                 |
+  3                      | p                 | p                 |
+  4                      | p                 | p                 |
+ Sp                      | p                 | p                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 0 p }
+    G1 = { 1 2 3 4 }
+
+  Transitions par classes (P0) :
+  Etat          a           b           Classe
+  --------------------------------------------
+  0             G1          G1          G0
+  1             G1          G1          G1
+  2             G1          G1          G1
+  3             G0          G0          G1
+  4             G0          G0          G1
+  p             G0          G0          G0
+
+  Partition P1 :
+    G0 = { 0 }
+    G1 = { 1 2 }
+    G2 = { 3 4 }
+    G3 = { p }
+
+  Transitions par classes (P1) :
+  Etat          a           b           Classe
+  --------------------------------------------
+  0             G1          G2          G0
+  1             G1          G2          G1
+  2             G1          G2          G1
+  3             G3          G3          G2
+  4             G3          G3          G2
+  p             G3          G3          G3
+
+  -> Partition stable atteinte en 2 iteration(s).
+
+  2 etat(s) fusionne(s) : 6 -> 4 etats.
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E q0                     | q1                | q2                |
+ Sq1                     | q1                | q2                |
+ Sq2                     | q3                | q3                |
+  q3                     | q3                | q3                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+  1                            -> q1
+  2                            -> q1
+  3                            -> q2
+  4                            -> q2
+  p                            -> q3
+Entrez un mot :ab
+
+ "ab" : OUI
+
+Entrez un mot :bb
+
+ "bb" : NON

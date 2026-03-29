@@ -1,0 +1,105 @@
+Quel automate veux tu utiliser ?:34
+
+
+===== Affichage de l'automate =====
+
+                         | a                 | b                 | ╬Á                |
+-------------------------------------------------------------------------------------
+E 0                      | --                | --                | 1,4               |
+  1                      | 2                 | --                | 2                 |
+  2                      | --                | 3                 | --                |
+  3                      | --                | --                | 2,6               |
+  4                      | --                | 5                 | --                |
+  5                      | --                | --                | 4,6               |
+ S6                      | --                | --                | --                |
+L'automate est STANDARDISE
+Automate non deterministe
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E 0.1.2.4                | 2                 | 2.3.4.5.6         |
+  2                      | P                 | 2.3.6             |
+ S2.3.4.5.6              | P                 | 2.3.4.5.6         |
+ S2.3.6                  | P                 | 2.3.6             |
+  P                      | P                 | P                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+ES0.1.2.4                | 2                 | 2.3.4.5.6         |
+ S2                      | P                 | 2.3.6             |
+  2.3.4.5.6              | P                 | 2.3.4.5.6         |
+  2.3.6                  | P                 | 2.3.6             |
+ SP                      | P                 | P                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 0.1.2.4 2 P }
+    G1 = { 2.3.4.5.6 2.3.6 }
+
+  Transitions par classes (P0) :
+  Etat          a           b           Classe
+  --------------------------------------------
+  0.1.2.4       G0          G1          G0
+  2             G0          G1          G0
+  2.3.4.5.6     G0          G1          G1
+  2.3.6         G0          G1          G1
+  P             G0          G0          G0
+
+  Partition P1 :
+    G0 = { 0.1.2.4 2 }
+    G1 = { 2.3.4.5.6 2.3.6 }
+    G2 = { P }
+
+  Transitions par classes (P1) :
+  Etat          a           b           Classe
+  --------------------------------------------
+  0.1.2.4       G0          G1          G0
+  2             G2          G1          G0
+  2.3.4.5.6     G2          G1          G1
+  2.3.6         G2          G1          G1
+  P             G2          G2          G2
+
+  Partition P2 :
+    G0 = { 0.1.2.4 }
+    G1 = { 2 }
+    G2 = { 2.3.4.5.6 2.3.6 }
+    G3 = { P }
+
+  Transitions par classes (P2) :
+  Etat          a           b           Classe
+  --------------------------------------------
+  0.1.2.4       G1          G2          G0
+  2             G3          G2          G1
+  2.3.4.5.6     G3          G2          G2
+  2.3.6         G3          G2          G2
+  P             G3          G3          G3
+
+  -> Partition stable atteinte en 3 iteration(s).
+
+  1 etat(s) fusionne(s) : 5 -> 4 etats.
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E q0                     | q1                | q2                |
+  q1                     | q3                | q2                |
+ Sq2                     | q3                | q2                |
+  q3                     | q3                | q3                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0.1.2.4                      -> q0
+  2                            -> q1
+  2.3.4.5.6                    -> q2
+  2.3.6                        -> q2
+  P                            -> q3
+Entrez un mot :aa
+
+ "aa" : NON

@@ -1,0 +1,71 @@
+Quel automate veux tu utiliser ?:44
+
+
+===== Affichage de l'automate =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E 0                      | 1,2               | 2                 |
+  1                      | --                | 3                 |
+ S2                      | 3                 | 2                 |
+ S3                      | 3,2               | 3,2               |
+L'automate est STANDARDISE
+Automate non deterministe
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E 0                      | 1.2               | 2                 |
+ S1.2                    | 3                 | 2.3               |
+ S2                      | 3                 | 2                 |
+ S3                      | 2.3               | 2.3               |
+ S2.3                    | 2.3               | 2.3               |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+ES0                      | 1.2               | 2                 |
+  1.2                    | 3                 | 2.3               |
+  2                      | 3                 | 2                 |
+  3                      | 2.3               | 2.3               |
+  2.3                    | 2.3               | 2.3               |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 0 }
+    G1 = { 1.2 2 3 2.3 }
+
+  Transitions par classes (P0) :
+  Etat          a           b           Classe
+  --------------------------------------------
+  0             G1          G1          G0
+  1.2           G1          G1          G1
+  2             G1          G1          G1
+  3             G1          G1          G1
+  2.3           G1          G1          G1
+
+  -> Partition stable atteinte en 1 iteration(s).
+
+  3 etat(s) fusionne(s) : 5 -> 2 etats.
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 | b                 |
+-----------------------------------------------------------------
+E q0                     | q1                | q1                |
+ Sq1                     | q1                | q1                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+  1.2                          -> q1
+  2                            -> q1
+  3                            -> q1
+  2.3                          -> q1
+Entrez un mot :ab
+
+ "ab" : OUI

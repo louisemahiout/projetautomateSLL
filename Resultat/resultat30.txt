@@ -1,0 +1,88 @@
+Quel automate veux tu utiliser ?:30
+
+
+===== Affichage de l'automate =====
+
+                         | a                 |
+---------------------------------------------
+ S0                      | 3                 |
+E 1                      | 2                 |
+  2                      | 3                 |
+ S3                      | 4                 |
+ S4                      | 0                 |
+L'automate est STANDARDISE
+Automate deterministe
+Automate complet
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 |
+---------------------------------------------
+ S0                      | 3                 |
+E 1                      | 2                 |
+  2                      | 3                 |
+ S3                      | 4                 |
+ S4                      | 0                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 |
+---------------------------------------------
+  0                      | 3                 |
+ES1                      | 2                 |
+ S2                      | 3                 |
+  3                      | 4                 |
+  4                      | 0                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 1 2 }
+    G1 = { 0 3 4 }
+
+  Transitions par classes (P0) :
+  Etat          a           Classe
+  --------------------------------
+  0             G1          G1
+  1             G0          G0
+  2             G1          G0
+  3             G1          G1
+  4             G1          G1
+
+  Partition P1 :
+    G0 = { 0 3 4 }
+    G1 = { 1 }
+    G2 = { 2 }
+
+  Transitions par classes (P1) :
+  Etat          a           Classe
+  --------------------------------
+  0             G0          G0
+  1             G2          G1
+  2             G0          G2
+  3             G0          G0
+  4             G0          G0
+
+  -> Partition stable atteinte en 2 iteration(s).
+
+  2 etat(s) fusionne(s) : 5 -> 3 etats.
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 |
+---------------------------------------------
+ Sq0                     | q0                |
+E q1                     | q2                |
+  q2                     | q0                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+  1                            -> q1
+  2                            -> q2
+  3                            -> q0
+  4                            -> q0
+Entrez un mot :aa
+
+ "aa" : OUI
