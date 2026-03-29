@@ -50,6 +50,15 @@ int main() {
     }
 
     afficher_automate_deterministe_complet(AFDC);
+    
+    lire_mot(mot);
+    while (strcmp(mot, "fin") != 0) {
+        if (reconnaitre_mot(AFDC, mot))
+            printf("→ \"%s\" : OUI\n\n", mot);
+        else
+            printf("→ \"%s\" : NON\n\n", mot);
+        lire_mot(mot);
+    }
 
     if (AFDC != AF)
         free(AFDC);
