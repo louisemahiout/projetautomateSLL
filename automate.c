@@ -453,7 +453,9 @@ Automate* determinisation_et_completion_automate(Automate *A)
     if (est_complet(B))
         return B;
     return completion(B);
+
 }
+
 void afficher_automate_deterministe_complet(Automate *A) {
     printf("\n===== AUTOMATE DETERMINISTE COMPLET =====\n");
     afficher_automate(A);
@@ -516,8 +518,8 @@ Automate* standardisation(Automate *A) {
 
                     if (!doublon) {
                         strcpy(
-                            B->transitions[idxI][j][B->nb_transitions[idxI][j]],
-                            dest
+                                B->transitions[idxI][j][B->nb_transitions[idxI][j]],
+                                dest
                         );
                         B->nb_transitions[idxI][j]++;
                     }
@@ -540,6 +542,7 @@ Automate* standardisation(Automate *A) {
     B->nb_initiaux = 1;
 
     return B;
+}
 
 // Lecture du mot
 void lire_mot(char *mot) {
@@ -553,22 +556,26 @@ int reconnaitre_mot(Automate *A, char *mot) {
     char symbole[5];
     char etat_courant[MAX_NOM];
     strcpy(etat_courant, A->initiaux[0]);
-    for (int c = 0; mot[c] != '\0'; ) {
+    for (int c = 0; mot[c] != '\0';) {
         symbole[0] = mot[c++];
         symbole[1] = '\0';
         int col = -1;
         for (int j = 0; j < A->nb_symboles; j++) {
-            if (strcmp(A->symboles[j], symbole) == 0) { col = j; break; }
+            if (strcmp(A->symboles[j], symbole) == 0) {
+                col = j;
+                break;
+            }
         }
         if (col == -1) return 0;
         int idx = -1;
         for (int i = 0; i < A->nb_etats; i++) {
-            if (strcmp(A->etats[i], etat_courant) == 0) { idx = i; break; }
+            if (strcmp(A->etats[i], etat_courant) == 0) {
+                idx = i;
+                break;
+            }
         }
         if (idx == -1 || A->nb_transitions[idx][col] == 0) return 0;
         strcpy(etat_courant, A->transitions[idx][col][0]);
-        return est_final(A, etat_courant);
-
     }
-
+    return est_final(A, etat_courant);
 }

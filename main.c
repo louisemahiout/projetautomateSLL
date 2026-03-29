@@ -8,6 +8,8 @@
 int main() {
     int choix;
     char chemin[256];
+    char mot[256];
+
 
     printf("\nQuel automate tu veux utilise?:  ");
     scanf("%d", &choix);
@@ -50,13 +52,14 @@ int main() {
     }
 
     afficher_automate_deterministe_complet(AFDC);
-    
+
+    while (getchar() != '\n');
     lire_mot(mot);
     while (strcmp(mot, "fin") != 0) {
         if (reconnaitre_mot(AFDC, mot))
-            printf("→ \"%s\" : OUI\n\n", mot);
+            printf(" \"%s\" : OUI\n\n", mot);
         else
-            printf("→ \"%s\" : NON\n\n", mot);
+            printf(" \"%s\" : NON\n\n", mot);
         lire_mot(mot);
     }
 
