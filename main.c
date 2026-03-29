@@ -24,11 +24,10 @@ int main() {
         printf("\n===== AUTOMATE STANDARDISE =====\n");
         afficher_automate(AS);
 
-        free(AF);
-        AF = AS;
+        free(AS);
     }
 
-    Automate *AFDC;
+    Automate *AFDC = NULL;
 
     if (est_deterministe(AF)) {
 
