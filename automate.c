@@ -1,109 +1,229 @@
 #include "automate.h"
 
+#define LARGEUR_ETAT 25
+#define LARGEUR_COL  20
+#define MAX_LIGNES   50
+// Vérifie si un état est initial
+// Paramètres :
+//   - A : pointeur vers l'automate
+//   - etat : nom de l'état à tester
+// Retour :
+//   - 1 si l'état est un état initial
+//   - 0 sinon
 int est_initial(Automate *A, char *etat) {
+    // parcourir tous les états initiaux
     for (int i = 0; i < A->nb_initiaux; i++)
-        if (strcmp(A->initiaux[i], etat) == 0)
-            return 1;
-    return 0;
+        // comparer le nom de l'état avec l'état testé
+            if (strcmp(A->initiaux[i], etat) == 0)
+                return 1; // trouvé : c'est un état initial
+    return 0; // non trouvé : ce n'est pas un état initial
 }
 
+// Vérifie si un état est final
+// Paramètres :
+//   - A : pointeur vers l'automate
+//   - etat : nom de l'état à tester
+// Retour :
+//   - 1 si l'état est un état final
+//   - 0 sinon
 int est_final(Automate *A, char *etat) {
+    // parcourir tous les états finaux
     for (int i = 0; i < A->nb_finaux; i++)
-        if (strcmp(A->finaux[i], etat) == 0)
-            return 1;
-    return 0;
+        // comparer le nom de l'état avec l'état testé
+            if (strcmp(A->finaux[i], etat) == 0)
+                return 1; // trouvé : c'est un état final
+    return 0; // non trouvé : ce n'est pas un état final
 }
 
+
+// Découpe un texte en plusieurs lignes de largeur fixe (pas de troncature visuelle)
+// Paramètres :
+//   - texte : texte à découper
+//   - lignes : tableau pour stocker chaque ligne découpée
+//   - largeur : largeur maximale d'une ligne
+// Retour : nombre de lignes générées
+int decouper_propre(char *texte, char lignes[][200], int largeur) {
+    int count = 0;           // compteur de lignes
+    int len = strlen(texte); // longueur totale du texte
+    int start = 0;           // position de départ dans le texte
+
+    while (start < len) {
+        int end = start + largeur;
+
+        // ne pas dépasser la fin du texte
+        if (end > len)
+            end = len;
+
+        // copier la portion de texte dans la ligne
+        strncpy(lignes[count], texte + start, end - start);
+        lignes[count][end - start] = '\0'; // terminer la chaîne
+
+        count++;
+        start = end; // passer à la portion suivante
+    }
+
+    // cas où le texte est vide
+    if (count == 0) {
+        strcpy(lignes[0], "");
+        return 1;
+    }
+
+    return count;
+}
+
+// Affiche l'automate avec états et transitions
+// Paramètres :
+//   - A : pointeur vers l'automate
 void afficher_automate(Automate *A) {
     int i, j, k;
 
-    // 🔹 entête
-    printf("      ");
-    for (j = 0; j < A->nb_symboles; j++)
-        printf("%-8s", A->symboles[j]);
     printf("\n");
 
-    // 🔹 lignes
+    //  ENTÊTE : affichage des symboles
+    printf("%-*s", LARGEUR_ETAT, ""); // espace pour les noms d'états
+    for (j = 0; j < A->nb_symboles; j++)
+        printf("| %-*s", LARGEUR_COL - 2, A->symboles[j]);
+    printf("|\n");
+
+    // LIGNE DE SÉPARATION
+    for (int x = 0; x < LARGEUR_ETAT; x++) printf("-");
+    for (j = 0; j < A->nb_symboles; j++)
+        for (int x = 0; x < LARGEUR_COL; x++) printf("-");
+    printf("\n");
+
+    // LIGNES : parcourir tous les états
     for (i = 0; i < A->nb_etats; i++) {
 
-        // E / S
-        if (est_initial(A, A->etats[i])) printf("E");
-        else printf(" ");
+        // Préparer l'affichage de l'état
+        // préfixe E pour état initial et S pour état final
+        char etat_brut[300];
+        sprintf(etat_brut, "%s%s%s",
+            est_initial(A, A->etats[i]) ? "E" : " ",
+            est_final(A, A->etats[i]) ? "S" : " ",
+            A->etats[i]
+        );
 
-        if (est_final(A, A->etats[i])) printf("S");
-        else printf(" ");
+        // découper l'état en lignes si trop long
+        char etat_lignes[MAX_LIGNES][200];
+        int nb_lignes_etat = decouper_propre(etat_brut, etat_lignes, LARGEUR_ETAT);
 
-        printf("%-3s ", A->etats[i]);
+        // Préparer les transitions pour chaque symbole
+        char cellules[50][MAX_LIGNES][200]; // texte des transitions
+        int nb_lignes_cellule[50];         // nombre de lignes par cellule
+        int max_lignes = nb_lignes_etat;   // hauteur maximale pour l'affichage multi-lignes
 
-        // transitions
         for (j = 0; j < A->nb_symboles; j++) {
 
+            char buffer[500] = "";
+
             if (A->nb_transitions[i][j] == 0) {
-                printf("%-8s", "--");
+                strcpy(buffer, "--"); // pas de transition
             } else {
+                // concaténer toutes les transitions séparées par une virgule
                 for (k = 0; k < A->nb_transitions[i][j]; k++) {
-                    printf("%s", A->transitions[i][j][k]);
+                    strcat(buffer, A->transitions[i][j][k]);
                     if (k < A->nb_transitions[i][j] - 1)
-                        printf(",");
+                        strcat(buffer, ",");
                 }
-                printf("%*s", 8 - 2, "");
             }
+
+            // découper la cellule de transitions en plusieurs lignes si trop longue
+            nb_lignes_cellule[j] = decouper_propre(buffer, cellules[j], LARGEUR_COL - 2);
+
+            // mettre à jour la hauteur maximale pour alignement
+            if (nb_lignes_cellule[j] > max_lignes)
+                max_lignes = nb_lignes_cellule[j];
         }
 
-        printf("\n");
+        // Affichage multi-lignes aligné
+        for (int l = 0; l < max_lignes; l++) {
+
+            // afficher l'état sur la première colonne
+            if (l < nb_lignes_etat)
+                printf("%-*.*s", LARGEUR_ETAT, LARGEUR_ETAT, etat_lignes[l]);
+            else
+                printf("%-*s", LARGEUR_ETAT, "");
+
+            // afficher les transitions
+            for (j = 0; j < A->nb_symboles; j++) {
+                if (l < nb_lignes_cellule[j])
+                    printf("| %-*.*s", LARGEUR_COL - 2, LARGEUR_COL - 2, cellules[j][l]);
+                else
+                    printf("| %-*s", LARGEUR_COL - 2, "");
+            }
+
+            printf("|\n"); // fin de ligne
+        }
     }
 }
+// Fonction qui lit un automate depuis un fichier texte
+// Le fichier contient : symboles, etats, initiaux, finaux, transitions
 Automate* lire_automate_sur_fichier(const char *nom_fichier) {
+    // Allouer de la mémoire pour l'automate
+    // On crée une structure Automate vide que l'on va remplir
     Automate *A = malloc(sizeof(Automate));
-    if (!A) { printf("Erreur allocation mémoire\n"); exit(1); }
+    if (!A) {
+        printf("Erreur allocation memoire\n");
+        exit(1);
+    }
 
+    // Ouvrir le fichier en lecture
     FILE *f = fopen(nom_fichier, "r");
-    if (!f) { printf("Erreur ouverture fichier '%s'\n", nom_fichier); exit(1); }
+    if (!f) {
+        printf("Erreur ouverture fichier '%s'\n", nom_fichier);
+        exit(1);
+    }
 
-    // 🔹 symboles
+    // Lire le nombre de symboles de l'alphabet de l'automate
     fscanf(f, "%d", &A->nb_symboles);
+    // Lire tous les symboles et les stocker dans A->symboles
     for (int i = 0; i < A->nb_symboles; i++)
-        fscanf(f, "%s", A->symboles[i]); // support ε
+        fscanf(f, "%s", A->symboles[i]);
 
-    // 🔹 états
+    // Lire le nombre d'etats de l'automate
     fscanf(f, "%d", &A->nb_etats);
+    // Lire le nom de chaque etat et les stocker
     for (int i = 0; i < A->nb_etats; i++)
         fscanf(f, "%s", A->etats[i]);
 
-    // 🔹 initiaux
+    // Lire le nombre d'etats initiaux
     fscanf(f, "%d", &A->nb_initiaux);
+    // Lire les etats initiaux
     for (int i = 0; i < A->nb_initiaux; i++)
         fscanf(f, "%s", A->initiaux[i]);
 
-    // 🔹 finaux
+    // Lire le nombre d'etats finaux
     fscanf(f, "%d", &A->nb_finaux);
+    // Lire les etats finaux
     for (int i = 0; i < A->nb_finaux; i++)
         fscanf(f, "%s", A->finaux[i]);
 
-    // 🔹 nb transitions
+    // Lire le nombre de transitions dans le fichier
     int nb;
     fscanf(f, "%d", &nb);
 
-    // 🔹 init
+    // Initialiser toutes les transitions à 0
+    // On part du principe qu'il n'y a aucune transition
     for (int i = 0; i < MAX_ETATS; i++)
         for (int j = 0; j < MAX_SYMBOLES; j++)
             A->nb_transitions[i][j] = 0;
 
-    // 🔹 transitions
+    // Lire toutes les transitions une par une
     for (int i = 0; i < nb; i++) {
         char ligne[30];
-        fscanf(f, "%s", ligne);
+        fscanf(f, "%s", ligne);  // La ligne contient source+symbole+destination
 
         char src[10], dest[10], symbole[5];
         int k = 0, j = 0;
 
-        // src
+        // Extraire l'etat source (jusqu'à ce qu'on rencontre le symbole)
         while ((ligne[k] >= '0' && ligne[k] <= '9') || ligne[k]=='p')
             src[j++] = ligne[k++];
-        src[j] = '\0';
+        src[j] = '\0';  // Terminer la chaîne source
 
-        // symbole (UTF-8 ou normal)
+        // Extraire le symbole
         j = 0;
+        // Supporte l'epsilon (UTF-8 : µ)
         if ((unsigned char)ligne[k] == 0xCE && (unsigned char)ligne[k+1] == 0xB5) {
             symbole[0] = ligne[k];
             symbole[1] = ligne[k+1];
@@ -114,10 +234,10 @@ Automate* lire_automate_sur_fichier(const char *nom_fichier) {
             symbole[1] = '\0';
         }
 
-        // dest
+        // Le reste de la ligne est l'etat destination
         strcpy(dest, &ligne[k]);
 
-        // trouver état source
+        // Trouver l'indice de l'etat source dans A->etats
         int s = -1;
         for (int x = 0; x < A->nb_etats; x++)
             if (strcmp(A->etats[x], src) == 0) { s = x; break; }
@@ -127,7 +247,7 @@ Automate* lire_automate_sur_fichier(const char *nom_fichier) {
             exit(1);
         }
 
-        // trouver symbole
+        // Trouver l'indice du symbole dans l'alphabet
         int col = -1;
         for (int x = 0; x < A->nb_symboles; x++)
             if (strcmp(A->symboles[x], symbole) == 0) { col = x; break; }
@@ -137,95 +257,84 @@ Automate* lire_automate_sur_fichier(const char *nom_fichier) {
             exit(1);
         }
 
-        // stocker
+        // Stocker la transition dans l'automate
+        // nb_transitions[s][col] compte combien de destinations pour cette source+symbole
         strcpy(A->transitions[s][col][A->nb_transitions[s][col]++], dest);
     }
 
+    // Fermer le fichier, lecture terminée
     fclose(f);
+
+    // Retourner l'automate rempli
     return A;
 }
 
+// Fonction qui verifie si l'automate est standard
+// Un automate standard : 1 seul état initial et aucune transition vers cet état
 int est_standard(Automate *A) {
-
-    // 🔹 1. Vérifier qu’il y a un seul état initial
+    // Vérifier qu'il n'y a qu'un seul état initial
     if (A->nb_initiaux != 1) {
-        return 0;
+        return 0;  // Pas standard si plusieurs états initiaux
     }
 
     char *etat_initial = A->initiaux[0];
 
-    // 🔹 2. Vérifier qu’aucune transition n’arrive vers l’état initial
+    // Vérifier qu'aucune transition n'arrive vers l'état initial
     for (int i = 0; i < A->nb_etats; i++) {
         for (int j = 0; j < A->nb_symboles; j++) {
             for (int k = 0; k < A->nb_transitions[i][j]; k++) {
                 if (strcmp(A->transitions[i][j][k], etat_initial) == 0) {
-                    return 0;
+                    return 0;  // Pas standard si transition vers l'état initial
                 }
             }
         }
     }
 
-    // ✅ Si tout est bon
-    return 1;
+    return 1;  // Standard si toutes conditions remplies
 }
 
+// Fonction qui verifie si l'automate est deterministe
+// Conditions : 1 état initial, pas d'epsilon, pas plus d'une transition par symbole
 int est_deterministe(Automate *A) {
+    if (A->nb_initiaux != 1) return 0; // Plus d'un état initial = non deterministe
 
-    // 🔹 1. Un seul état initial
-    if (A->nb_initiaux != 1) {
-        return 0;
-    }
+    // Vérifier qu'il n'y a pas d'epsilon dans l'alphabet
+    for (int i = 0; i < A->nb_symboles; i++)
+        if (strcmp(A->symboles[i], "ε") == 0) return 0;
 
-    // 🔹 2. Pas de ε
-    for (int i = 0; i < A->nb_symboles; i++) {
-        if (strcmp(A->symboles[i], "ε") == 0) {
-            return 0;
-        }
-    }
-
-    // 🔹 3. Au plus une transition par symbole
-    for (int i = 0; i < A->nb_etats; i++) {
-        for (int j = 0; j < A->nb_symboles; j++) {
-            if (A->nb_transitions[i][j] > 1) {
-                return 0;
-            }
-        }
-    }
+    // Vérifier qu'il n'y a pas plus d'une transition pour un symbole depuis un état
+    for (int i = 0; i < A->nb_etats; i++)
+        for (int j = 0; j < A->nb_symboles; j++)
+            if (A->nb_transitions[i][j] > 1) return 0;
 
     return 1;
 }
+// Fonction qui verifie si l'automate est complet
+// Un automate complet a au moins une transition pour chaque symbole de chaque état
 int est_complet(Automate *A) {
-
     for (int i = 0; i < A->nb_etats; i++) {
         for (int j = 0; j < A->nb_symboles; j++) {
-
-
-            if (strcmp(A->symboles[j], "ε") == 0)
-                continue;
-
-            if (A->nb_transitions[i][j] == 0) {
-                return 0;
-            }
+            if (strcmp(A->symboles[j], "ε") == 0) continue; // Ignorer epsilon
+            if (A->nb_transitions[i][j] == 0) return 0; // Si aucune transition, incomplet
         }
     }
-
-    return 1;
+    return 1; // Toutes les transitions présentes = complet
 }
+// Fonction qui complete un automate incomplet en ajoutant un état "puits"
+// Le puits absorbe tous les symboles manquants et boucle sur lui-même
 Automate* completion(Automate *A) {
-
     Automate *B = malloc(sizeof(Automate));
-    *B = *A;
+    *B = *A;  // Copier l'automate existant
 
+    // Ajouter un nouvel état puits
     int puit = B->nb_etats;
     strcpy(B->etats[puit], "P");
     B->nb_etats++;
 
+    // Pour chaque état et symbole, si pas de transition, ajouter le puits
     for (int i = 0; i < B->nb_etats; i++) {
         for (int j = 0; j < B->nb_symboles; j++) {
-
-            if (strcmp(B->symboles[j], "ε") == 0)
-                continue;
-
+            if (strcmp(B->symboles[j], "ε") == 0) continue;
             if (B->nb_transitions[i][j] == 0) {
                 strcpy(B->transitions[i][j][0], "P");
                 B->nb_transitions[i][j] = 1;
@@ -233,10 +342,9 @@ Automate* completion(Automate *A) {
         }
     }
 
+    // Le puits se redirige vers lui-même pour toutes les transitions
     for (int j = 0; j < B->nb_symboles; j++) {
-        if (strcmp(B->symboles[j], "ε") == 0)
-            continue;
-
+        if (strcmp(B->symboles[j], "ε") == 0) continue;
         strcpy(B->transitions[puit][j][0], "P");
         B->nb_transitions[puit][j] = 1;
     }
@@ -245,9 +353,33 @@ Automate* completion(Automate *A) {
 }
 /* =========================================================
  * epsilon_fermeture
- * Calcule l'ε-fermeture d'UN état (src = indice dans A->etats).
- * Remplit fermeture[] avec les indices des états atteignables
- * via ε uniquement (src inclus). *taille = nombre d'éléments.
+ * =========================================================
+ * Calcule l'ε-fermeture d'un état donné d'un automate.
+ *
+ * Paramètres :
+ *  - A : pointeur vers l'automate
+ *  - src : indice de l'état source dans A->etats
+ *  - fermeture[] : tableau à remplir avec les indices
+ *      des états atteignables uniquement via ε-transitions,
+ *      y compris src lui-même
+ *  - taille : pointeur vers un entier, sera mis à jour
+ *      avec le nombre d'états dans la fermeture
+ *
+ * Principe :
+ *  La fermeture ε d'un état est l'ensemble des états
+ *  atteignables depuis src en suivant zéro ou plusieurs
+ *  transitions ε (sans consommer de symbole réel).
+ *
+ * Algorithme :
+ *  1. Identifier la colonne correspondant à ε dans l'alphabet
+ *  2. Initialiser une pile pour parcours en profondeur (DFS)
+ *  3. Ajouter src à la pile et marquer comme visité
+ *  4. Tant que la pile n'est pas vide :
+ *     a. Dépiler l'état courant
+ *     b. Pour chaque transition ε depuis cet état :
+ *        i. Trouver l'indice de l'état destination
+ *        ii. Si non encore visité, l'ajouter à fermeture et à la pile
+ *  5. Retourner fermeture[] et taille
  * ========================================================= */
 void epsilon_fermeture(Automate *A, int src,
                        int fermeture[], int *taille)
@@ -289,7 +421,22 @@ void epsilon_fermeture(Automate *A, int src,
     }
 }
 
-/* Fermeture ε d'un ensemble d'états (indices) */
+/* =========================================================
+ * eps_fermeture_ens
+ * =========================================================
+ * Calcule la fermeture ε d'un ensemble d'états.
+ *
+ * Paramètres :
+ *  - src[] : indices des états de départ
+ *  - nb : nombre d'états dans src[]
+ *  - res[] : tableau pour stocker l'ensemble final
+ *  - taille : nombre d'états dans res[]
+ *
+ * Principe :
+ *  Pour chaque état de l'ensemble, on calcule sa
+ *  fermeture ε individuelle, puis on fait l'union
+ *  de tous les résultats en évitant les doublons.
+ * ========================================================= */
 static void eps_fermeture_ens(Automate *A,
                                int src[], int nb,
                                int res[], int *taille)
@@ -304,7 +451,24 @@ static void eps_fermeture_ens(Automate *A,
     }
 }
 
-/* Construit "i.j.k" trié depuis un tableau d'indices */
+/* =========================================================
+ * indices_vers_nom
+ * =========================================================
+ * Crée un nom unique pour un état de l'automate
+ * déterministe à partir d'un ensemble d'indices d'états.
+ *
+ * Exemple :
+ *  idx[] = {2, 5, 0}  → nom = "0.2.5"
+ *
+ * Paramètres :
+ *  - idx[] : indices des états
+ *  - nb : nombre d'indices
+ *  - res[] : chaîne de caractères pour stocker le nom
+ *
+ * Principe :
+ *  1. Trier les indices par ordre croissant
+ *  2. Concaténer les noms correspondants séparés par "."
+ * ========================================================= */
 static void indices_vers_nom(Automate *A,
                               int idx[], int nb,
                               char res[])
@@ -322,7 +486,23 @@ static void indices_vers_nom(Automate *A,
 
 /* =========================================================
  * determinisation_et_completion_automate
- * Fonctionne pour automates SYNCHRONES et ASYNCHRONES (ε).
+ * =========================================================
+ * Transforme un automate (ε ou non) en un automate
+ * déterministe complet.
+ *
+ * Étapes principales :
+ * 1. Initialiser B (automate déterministe) sans transitions
+ * 2. Copier l'alphabet de A en ignorant ε
+ * 3. Calculer l'état initial de B = ε-fermeture des initiaux de A
+ * 4. Explorer tous les nouveaux états générés
+ *    par chaque symbole (largeur)
+ *    - Successeurs directs
+ *    - ε-fermeture des successeurs
+ *    - Vérifier si état existe déjà
+ *    - Ajouter si nouveau
+ *    - Créer transition
+ * 5. Déterminer les états finaux de B
+ * 6. Compléter l'automate s'il n'est pas complet
  * ========================================================= */
 Automate* determinisation_et_completion_automate(Automate *A)
 {
@@ -453,12 +633,38 @@ Automate* determinisation_et_completion_automate(Automate *A)
     if (est_complet(B))
         return B;
     return completion(B);
+
 }
+
 void afficher_automate_deterministe_complet(Automate *A) {
     printf("\n===== AUTOMATE DETERMINISTE COMPLET =====\n");
     afficher_automate(A);
 }
-
+/* =========================================================
+ * standardisation
+ * =========================================================
+ * Transforme un automate en un automate standard.
+ *
+ * Un automate standard possède :
+ *  - un unique état initial
+ *  - toutes les transitions des anciens initiaux
+ *    redirigées depuis ce nouvel état
+ *  - le nouvel état initial devient final si un ancien
+ *    état initial était final
+ *
+ * Paramètres :
+ *  - A : pointeur vers l'automate à standardiser
+ *
+ * Retour :
+ *  - B : nouvel automate standardisé
+ *
+ * Étapes principales :
+ * 1. Créer une copie de l'automate A
+ * 2. Ajouter un nouvel état initial "I" en évitant les conflits de noms
+ * 3. Copier toutes les transitions des anciens états initiaux vers le nouvel état
+ * 4. Vérifier si le nouvel état doit être final
+ * 5. Définir "I" comme l'unique état initial
+ * ========================================================= */
 Automate* standardisation(Automate *A) {
     Automate *B = malloc(sizeof(Automate));
     memset(B, 0, sizeof(Automate));
@@ -466,7 +672,7 @@ Automate* standardisation(Automate *A) {
     // copier automate
     *B = *A;
 
-    // 🔹 nouvel état initial
+    //  nouvel état initial
     char nouvel_initial[10] = "I";
 
     // éviter conflit si I existe déjà
@@ -486,7 +692,7 @@ Automate* standardisation(Automate *A) {
     strcpy(B->etats[idxI], nouvel_initial);
     B->nb_etats++;
 
-    // 🔹 copier transitions de tous les anciens initiaux
+    // copier transitions de tous les anciens initiaux
     for (int init = 0; init < A->nb_initiaux; init++) {
 
         char *ancien = A->initiaux[init];
@@ -516,8 +722,8 @@ Automate* standardisation(Automate *A) {
 
                     if (!doublon) {
                         strcpy(
-                            B->transitions[idxI][j][B->nb_transitions[idxI][j]],
-                            dest
+                                B->transitions[idxI][j][B->nb_transitions[idxI][j]],
+                                dest
                         );
                         B->nb_transitions[idxI][j]++;
                     }
@@ -526,7 +732,7 @@ Automate* standardisation(Automate *A) {
         }
     }
 
-    // 🔹 si un ancien initial était final → I devient final
+    // si un ancien initial était final → I devient final
     for (int i = 0; i < A->nb_initiaux; i++) {
         if (est_final(A, A->initiaux[i])) {
             strcpy(B->finaux[B->nb_finaux], nouvel_initial);
@@ -535,9 +741,460 @@ Automate* standardisation(Automate *A) {
         }
     }
 
-    // 🔹 I devient l’unique initial
+    // I devient l’unique initial
     strcpy(B->initiaux[0], nouvel_initial);
     B->nb_initiaux = 1;
+
+    return B;
+}
+
+/* =========================================================
+ * lire_mot
+ * =========================================================
+ * Lit un mot depuis l'entrée standard.
+ *
+ * Paramètres :
+ *  - mot : tableau de caractères pour stocker le mot
+ *
+ * Remarque :
+ *  - Supprime le '\n' final généré par fgets
+ * ========================================================= */
+void lire_mot(char *mot) {
+    printf("Entrez un mot : ");
+    fgets(mot, 256, stdin); //fonction native
+    mot[strcspn(mot, "\n")] = '\0'; // supprimer le \n final
+}
+
+/* =========================================================
+ * reconnaitre_mot
+ * =========================================================
+ * Vérifie si un mot est accepté par l'automate A.
+ *
+ * Paramètres :
+ *  - A : pointeur vers l'automate
+ *  - mot : chaîne de caractères représentant le mot
+ *
+ * Retour :
+ *  - 1 si le mot est accepté, 0 sinon
+ *
+ * Étapes principales :
+ * 1. Cas mot vide ou ε (entrée vide, "e", ou UTF-8 ε)si on veut verifier si le mot
+ * vide le reconnait ou pas il faut mettre e
+ *    - Vérifie si l'état initial est final
+ *    - Vérifie la ε-fermeture de l'état initial
+ * 2. Cas général :
+ *    - Parcours du mot symbole par symbole
+ *    - Gestion UTF-8 pour ε
+ *    - Vérifie les transitions existantes
+ *    - Met à jour l'état courant
+ * 3. Après lecture :
+ *    - Vérifie si l'état courant est final
+ *    - Vérifie la ε-fermeture de l'état courant
+ * ========================================================= */
+int reconnaitre_mot(Automate *A, char *mot) {
+    char symbole[5];
+    char etat_courant[MAX_NOM];
+    strcpy(etat_courant, A->initiaux[0]);
+
+    // CAS 1 : mot vide (ε, e ou entrée vide)
+    if (
+        strcmp(mot, "e") == 0 ||
+        (unsigned char)mot[0] == 0xCE && (unsigned char)mot[1] == 0xB5 && mot[2] == '\0' ||
+        mot[0] == '\0'
+    ) {
+        //  si état initial est final
+        if (est_final(A, etat_courant))
+            return 1;
+
+        // ε-fermeture
+        int idx_init = -1;
+        for (int i = 0; i < A->nb_etats; i++) {
+            if (strcmp(A->etats[i], etat_courant) == 0) {
+                idx_init = i;
+                break;
+            }
+        }
+
+        if (idx_init != -1) {
+            int fermeture[MAX_ETATS];
+            int taille = 0;
+
+            epsilon_fermeture(A, idx_init, fermeture, &taille);
+
+            for (int i = 0; i < taille; i++) {
+                if (est_final(A, A->etats[fermeture[i]]))
+                    return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    // CAS normal
+    for (int c = 0; mot[c] != '\0';) {
+
+        // gestion UTF-8 pour ε
+        if ((unsigned char)mot[c] == 0xCE && (unsigned char)mot[c+1] == 0xB5) {
+            symbole[0] = mot[c];
+            symbole[1] = mot[c+1];
+            symbole[2] = '\0';
+            c += 2;
+        } else {
+            symbole[0] = mot[c++];
+            symbole[1] = '\0';
+        }
+
+        int col = -1;
+        for (int j = 0; j < A->nb_symboles; j++) {
+            if (strcmp(A->symboles[j], symbole) == 0) {
+                col = j;
+                break;
+            }
+        }
+
+        if (col == -1) return 0;
+
+        int idx = -1;
+        for (int i = 0; i < A->nb_etats; i++) {
+            if (strcmp(A->etats[i], etat_courant) == 0) {
+                idx = i;
+                break;
+            }
+        }
+
+        if (idx == -1 || A->nb_transitions[idx][col] == 0)
+            return 0;
+
+        strcpy(etat_courant, A->transitions[idx][col][0]);
+    }
+
+    //  état final direct
+    if (est_final(A, etat_courant))
+        return 1;
+
+    // ε après lecture
+    int idx = -1;
+    for (int i = 0; i < A->nb_etats; i++) {
+        if (strcmp(A->etats[i], etat_courant) == 0) {
+            idx = i;
+            break;
+        }
+    }
+
+    if (idx != -1) {
+        int fermeture[MAX_ETATS];
+        int taille = 0;
+
+        epsilon_fermeture(A, idx, fermeture, &taille);
+
+        for (int i = 0; i < taille; i++) {
+            if (est_final(A, A->etats[fermeture[i]]))
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+/* =========================================================
+ * minimisation
+ * ---------------------------------------------------------
+ * Algorithme de Moore (raffinement de partitions).
+ *
+ * Entrée  : AFDC — automate déterministe complet
+ * Sortie  : AFDCM — automate minimal équivalent
+ *
+ * Affiche chaque partition numérotée + transitions en termes de classes.
+ * La correspondance état_AFDC → classe est stockée dans _corr[].
+ * ========================================================= */
+
+/* Tableau statique partagé avec main via get_correspondance() */
+static int _corr[MAX_ETATS];
+static int _nb_classes_global;
+
+/* Affiche une partition et les transitions exprimées en classes */
+static void afficher_partition(Automate *AFDC, int classe[],
+                               int nb_classes, int num_partition) {
+    int n = AFDC->nb_etats;
+
+    printf("\n  Partition P%d :\n", num_partition);
+    for (int c = 0; c < nb_classes; c++) {
+        printf("    G%d = { ", c);
+        for (int i = 0; i < n; i++)
+            if (classe[i] == c) printf("%s ", AFDC->etats[i]);
+        printf("}\n");
+    }
+
+    /* Transitions exprimées en classes */
+    printf("\n  Transitions par classes (P%d) :\n", num_partition);
+    /* Largeur de colonne : 12 pour l'état, 12 par symbole */
+    printf("  %-12s", "Etat");
+    for (int s = 0; s < AFDC->nb_symboles; s++)
+        printf("  %-10s", AFDC->symboles[s]);
+    printf("  Classe\n");
+    printf("  ");
+    for (int x = 0; x < 12 + 12 * AFDC->nb_symboles + 8; x++) printf("-");
+    printf("\n");
+
+    for (int i = 0; i < n; i++) {
+        printf("  %-12s", AFDC->etats[i]);
+        for (int s = 0; s < AFDC->nb_symboles; s++) {
+            if (AFDC->nb_transitions[i][s] == 0) {
+                printf("  %-10s", "--");
+            } else {
+                char *dest = AFDC->transitions[i][s][0];
+                int cl = -1;
+                for (int x = 0; x < n; x++)
+                    if (strcmp(AFDC->etats[x], dest) == 0) { cl = classe[x]; break; }
+                char buf[16];
+                sprintf(buf, "G%d", cl);
+                printf("  %-10s", buf);
+            }
+        }
+        printf("  G%d\n", classe[i]);
+    }
+}
+
+Automate* minimisation(Automate *AFDC) {
+
+    int n = AFDC->nb_etats;
+
+    /* --------------------------------------------------
+     * 1. Partition initiale P0
+     *    Principe : séparer finaux (G1) et non-finaux (G0).
+     *    Cas dégénérés : tous finaux → une seule classe G0
+     *                    aucun final → une seule classe G0
+     * -------------------------------------------------- */
+    int classe[MAX_ETATS];
+    int nb_classes;
+
+    /* Compter finaux et non-finaux */
+    int nb_finaux_AFDC = 0, nb_non_finaux_AFDC = 0;
+    for (int i = 0; i < n; i++) {
+        if (est_final(AFDC, AFDC->etats[i])) nb_finaux_AFDC++;
+        else nb_non_finaux_AFDC++;
+    }
+
+    if (nb_finaux_AFDC == 0 || nb_non_finaux_AFDC == 0) {
+        /* Une seule classe */
+        nb_classes = 1;
+        for (int i = 0; i < n; i++) classe[i] = 0;
+    } else {
+        /* Deux classes : 0 = non-finaux, 1 = finaux */
+        nb_classes = 2;
+        for (int i = 0; i < n; i++)
+            classe[i] = est_final(AFDC, AFDC->etats[i]) ? 1 : 0;
+    }
+
+    printf("\n========== MINIMISATION ==========\n");
+    afficher_partition(AFDC, classe, nb_classes, 0);
+
+    /* --------------------------------------------------
+     * 2. Raffinement itératif jusqu'à stabilité
+     * -------------------------------------------------- */
+    int iteration = 1;
+    int stable = 0;
+
+    while (!stable) {
+
+        int new_classe[MAX_ETATS];
+        int new_nb = 0;
+        int marque[MAX_ETATS];
+        for (int i = 0; i < n; i++) marque[i] = -1;
+
+        for (int i = 0; i < n; i++) {
+            if (marque[i] != -1) continue;
+
+            /* Nouvelle classe pour l'état i */
+            int ma_classe = new_nb++;
+            marque[i] = ma_classe;
+            new_classe[i] = ma_classe;
+
+            /* Regrouper tous les j de même ancienne classe
+               ET même profil de transitions (destinations dans même classe) */
+            for (int j = i + 1; j < n; j++) {
+                if (marque[j] != -1) continue;
+                if (classe[j] != classe[i]) continue;
+
+                int meme = 1;
+                for (int s = 0; s < AFDC->nb_symboles && meme; s++) {
+                    /* Classe destination de i par s */
+                    int cl_i = -1;
+                    if (AFDC->nb_transitions[i][s] > 0) {
+                        char *d = AFDC->transitions[i][s][0];
+                        for (int x = 0; x < n; x++)
+                            if (strcmp(AFDC->etats[x], d) == 0) { cl_i = classe[x]; break; }
+                    }
+                    /* Classe destination de j par s */
+                    int cl_j = -1;
+                    if (AFDC->nb_transitions[j][s] > 0) {
+                        char *d = AFDC->transitions[j][s][0];
+                        for (int x = 0; x < n; x++)
+                            if (strcmp(AFDC->etats[x], d) == 0) { cl_j = classe[x]; break; }
+                    }
+                    if (cl_i != cl_j) meme = 0;
+                }
+
+                if (meme) {
+                    marque[j] = ma_classe;
+                    new_classe[j] = ma_classe;
+                }
+            }
+        }
+
+        /* La partition est stable si aucun état n'a changé de groupe */
+        stable = 1;
+        for (int i = 0; i < n && stable; i++)
+            for (int j = i + 1; j < n && stable; j++)
+                if ((classe[i] == classe[j]) != (new_classe[i] == new_classe[j]))
+                    stable = 0;
+
+        for (int i = 0; i < n; i++) classe[i] = new_classe[i];
+        nb_classes = new_nb;
+
+        if (!stable) {
+            afficher_partition(AFDC, classe, nb_classes, iteration);
+            iteration++;
+        }
+    }
+
+    printf("\n  -> Partition stable atteinte en %d iteration(s).\n", iteration);
+
+    /* Sauvegarder la correspondance */
+    for (int i = 0; i < n; i++) _corr[i] = classe[i];
+    _nb_classes_global = nb_classes;
+
+    /* --------------------------------------------------
+     * 3. Construire l'automate minimal AFDCM
+     * -------------------------------------------------- */
+    Automate *M = malloc(sizeof(Automate));
+    if (!M) { printf("Erreur malloc minimisation\n"); exit(1); }
+
+    for (int i = 0; i < MAX_ETATS; i++)
+        for (int j = 0; j < MAX_SYMBOLES; j++)
+            M->nb_transitions[i][j] = 0;
+
+    /* Alphabet identique (sans ε, AFDC en est déjà débarrassé) */
+    M->nb_symboles = AFDC->nb_symboles;
+    for (int i = 0; i < AFDC->nb_symboles; i++)
+        strcpy(M->symboles[i], AFDC->symboles[i]);
+
+    /* Un état par classe, nommé "q0", "q1", ... */
+    M->nb_etats = nb_classes;
+    for (int c = 0; c < nb_classes; c++) {
+        char nom[16];
+        sprintf(nom, "q%d", c);
+        strcpy(M->etats[c], nom);
+    }
+
+    /* État initial = classe contenant l'état initial de AFDC */
+    M->nb_initiaux = 0;
+    for (int i = 0; i < AFDC->nb_initiaux; i++) {
+        for (int x = 0; x < n; x++) {
+            if (strcmp(AFDC->etats[x], AFDC->initiaux[i]) == 0) {
+                char nom[16];
+                sprintf(nom, "q%d", classe[x]);
+                int doublon = 0;
+                for (int k = 0; k < M->nb_initiaux; k++)
+                    if (strcmp(M->initiaux[k], nom) == 0) { doublon = 1; break; }
+                if (!doublon)
+                    strcpy(M->initiaux[M->nb_initiaux++], nom);
+                break;
+            }
+        }
+    }
+
+    /* États finaux = classes contenant au moins un état final de AFDC */
+    M->nb_finaux = 0;
+    int classe_finale[MAX_ETATS] = {0};
+    for (int i = 0; i < n; i++) {
+        if (est_final(AFDC, AFDC->etats[i]) && !classe_finale[classe[i]]) {
+            classe_finale[classe[i]] = 1;
+            char nom[16];
+            sprintf(nom, "q%d", classe[i]);
+            strcpy(M->finaux[M->nb_finaux++], nom);
+        }
+    }
+
+    /* Transitions : représentant de chaque classe */
+    for (int c = 0; c < nb_classes; c++) {
+        int rep = -1;
+        for (int i = 0; i < n; i++)
+            if (classe[i] == c) { rep = i; break; }
+        if (rep == -1) continue;
+
+        for (int s = 0; s < AFDC->nb_symboles; s++) {
+            if (AFDC->nb_transitions[rep][s] == 0) continue;
+            char *dest = AFDC->transitions[rep][s][0];
+            for (int x = 0; x < n; x++) {
+                if (strcmp(AFDC->etats[x], dest) == 0) {
+                    char nom_dest[16];
+                    sprintf(nom_dest, "q%d", classe[x]);
+                    strcpy(M->transitions[c][s][0], nom_dest);
+                    M->nb_transitions[c][s] = 1;
+                    break;
+                }
+            }
+        }
+    }
+
+    return M;
+}
+
+/* =========================================================
+ * afficher_automate_minimal
+ * ---------------------------------------------------------
+ * Affiche AFDCM + message "déjà minimal" si applicable
+ * + table de correspondance AFDC → AFDCM.
+ * ========================================================= */
+void afficher_automate_minimal(Automate *AFDCM, Automate *AFDC,
+                               int correspondance[], int nb_etats_AFDC) {
+    if (AFDCM->nb_etats == AFDC->nb_etats)
+        printf("\n  L'automate etait deja minimal (aucun etat fusionne).\n");
+    else
+        printf("\n  %d etat(s) fusionne(s) : %d -> %d etats.\n",
+               AFDC->nb_etats - AFDCM->nb_etats,
+               AFDC->nb_etats, AFDCM->nb_etats);
+
+    printf("\n===== AUTOMATE MINIMAL (AFDCM) =====\n");
+    afficher_automate(AFDCM);
+
+    printf("\n  Table de correspondance AFDC -> AFDCM :\n");
+    printf("  %-28s -> %s\n", "Etat AFDC", "Etat AFDCM");
+    printf("  ");
+    for (int i = 0; i < 40; i++) printf("-");
+    printf("\n");
+    for (int i = 0; i < nb_etats_AFDC; i++) {
+        char nom_classe[16];
+        sprintf(nom_classe, "q%d", correspondance[i]);
+        printf("  %-28s -> %s\n", AFDC->etats[i], nom_classe);
+    }
+}
+
+/* Accesseurs pour récupérer la correspondance depuis main.c */
+int* get_correspondance(void)     { return _corr; }
+int  get_nb_classes(void)         { return _nb_classes_global; }
+
+Automate* automate_complementaire(Automate *A) {
+
+    Automate *B = malloc(sizeof(Automate));
+    if (!B) {
+        printf("Erreur malloc\n");
+        exit(1);
+    }
+
+    // Copier l'automate
+    *B = *A;
+
+    // Nouveaux états finaux = ceux qui ne sont PAS finaux
+    B->nb_finaux = 0;
+
+    for (int i = 0; i < B->nb_etats; i++) {
+
+        if (!est_final(A, B->etats[i])) {
+            strcpy(B->finaux[B->nb_finaux++], B->etats[i]);
+        }
+    }
 
     return B;
 }
