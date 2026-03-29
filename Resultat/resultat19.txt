@@ -1,0 +1,86 @@
+Quel automate veux tu utiliser ?:19
+
+
+===== Affichage de l'automate =====
+
+                         | a                 |
+---------------------------------------------
+ S0                      | 0                 |
+E 1                      | 2                 |
+  2                      | 0                 |
+L'automate est STANDARDISE
+Automate deterministe
+Automate complet
+
+===== AUTOMATE DETERMINISTE COMPLET =====
+
+                         | a                 |
+---------------------------------------------
+ S0                      | 0                 |
+E 1                      | 2                 |
+  2                      | 0                 |
+
+===== AUTOMATE COMPLEMENTAIRE =====
+
+                         | a                 |
+---------------------------------------------
+  0                      | 0                 |
+ES1                      | 2                 |
+ S2                      | 0                 |
+
+========== MINIMISATION ==========
+
+  Partition P0 :
+    G0 = { 1 2 }
+    G1 = { 0 }
+
+  Transitions par classes (P0) :
+  Etat          a           Classe
+  --------------------------------
+  0             G1          G1
+  1             G0          G0
+  2             G1          G0
+
+  Partition P1 :
+    G0 = { 0 }
+    G1 = { 1 }
+    G2 = { 2 }
+
+  Transitions par classes (P1) :
+  Etat          a           Classe
+  --------------------------------
+  0             G0          G0
+  1             G2          G1
+  2             G0          G2
+
+  -> Partition stable atteinte en 2 iteration(s).
+
+  L'automate etait deja minimal (aucun etat fusionne).
+
+===== AUTOMATE MINIMAL (AFDCM) =====
+
+                         | a                 |
+---------------------------------------------
+ Sq0                     | q0                |
+E q1                     | q2                |
+  q2                     | q0                |
+
+  Table de correspondance AFDC -> AFDCM :
+  Etat AFDC                    -> Etat AFDCM
+  ----------------------------------------
+  0                            -> q0
+  1                            -> q1
+  2                            -> q2
+Entrez un mot :e
+
+ "e" : NON
+
+Entrez un mot :a
+
+ "a" : NON
+
+Entrez un mot :aaa
+
+ "aaa" : OUI
+
+Entrez un mot :fin
