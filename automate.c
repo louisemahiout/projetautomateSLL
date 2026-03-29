@@ -1,5 +1,8 @@
 #include "automate.h"
 
+#define LARGEUR_ETAT 25
+#define LARGEUR_COL  20
+#define MAX_LIGNES   50
 int est_initial(Automate *A, char *etat) {
     for (int i = 0; i < A->nb_initiaux; i++)
         if (strcmp(A->initiaux[i], etat) == 0)
@@ -14,43 +17,110 @@ int est_final(Automate *A, char *etat) {
     return 0;
 }
 
+
+// 🔹 découpe simple (pas de troncature visuelle)
+int decouper_propre(char *texte, char lignes[][200], int largeur) {
+    int count = 0;
+    int len = strlen(texte);
+    int start = 0;
+
+    while (start < len) {
+        int end = start + largeur;
+
+        if (end > len)
+            end = len;
+
+        strncpy(lignes[count], texte + start, end - start);
+        lignes[count][end - start] = '\0';
+
+        count++;
+        start = end;
+    }
+
+    if (count == 0) {
+        strcpy(lignes[0], "");
+        return 1;
+    }
+
+    return count;
+}
+
 void afficher_automate(Automate *A) {
     int i, j, k;
 
-    // 🔹 entête
-    printf("      ");
-    for (j = 0; j < A->nb_symboles; j++)
-        printf("%-8s", A->symboles[j]);
     printf("\n");
 
-    // 🔹 lignes
+    // 🔹 ENTÊTE
+    printf("%-*s", LARGEUR_ETAT, "");
+    for (j = 0; j < A->nb_symboles; j++)
+        printf("| %-*s", LARGEUR_COL - 2, A->symboles[j]);
+    printf("|\n");
+
+    // 🔹 LIGNE SÉPARATION
+    for (int x = 0; x < LARGEUR_ETAT; x++) printf("-");
+    for (j = 0; j < A->nb_symboles; j++)
+        for (int x = 0; x < LARGEUR_COL; x++) printf("-");
+    printf("\n");
+
+    // 🔹 LIGNES
     for (i = 0; i < A->nb_etats; i++) {
 
-        // E / S
-        if (est_initial(A, A->etats[i])) printf("E");
-        else printf(" ");
+        // 🔹 état brut (E / S + nom)
+        char etat_brut[300];
+        sprintf(etat_brut, "%s%s%s",
+            est_initial(A, A->etats[i]) ? "E" : " ",
+            est_final(A, A->etats[i]) ? "S" : " ",
+            A->etats[i]
+        );
 
-        if (est_final(A, A->etats[i])) printf("S");
-        else printf(" ");
+        // 🔹 découpage état
+        char etat_lignes[MAX_LIGNES][200];
+        int nb_lignes_etat = decouper_propre(etat_brut, etat_lignes, LARGEUR_ETAT);
 
-        printf("%-3s ", A->etats[i]);
+        // 🔹 transitions
+        char cellules[50][MAX_LIGNES][200];
+        int nb_lignes_cellule[50];
+        int max_lignes = nb_lignes_etat;
 
-        // transitions
         for (j = 0; j < A->nb_symboles; j++) {
 
+            char buffer[500] = "";
+
             if (A->nb_transitions[i][j] == 0) {
-                printf("%-8s", "--");
+                strcpy(buffer, "--");
             } else {
                 for (k = 0; k < A->nb_transitions[i][j]; k++) {
-                    printf("%s", A->transitions[i][j][k]);
+                    strcat(buffer, A->transitions[i][j][k]);
                     if (k < A->nb_transitions[i][j] - 1)
-                        printf(",");
+                        strcat(buffer, ",");
                 }
-                printf("%*s", 8 - 2, "");
             }
+
+            nb_lignes_cellule[j] = decouper_propre(buffer, cellules[j], LARGEUR_COL - 2);
+
+            if (nb_lignes_cellule[j] > max_lignes)
+                max_lignes = nb_lignes_cellule[j];
         }
 
-        printf("\n");
+        // 🔹 affichage multi-lignes ALIGNÉ
+        for (int l = 0; l < max_lignes; l++) {
+
+            // 🔥 état (corrigé avec largeur FIXE)
+            if (l < nb_lignes_etat)
+                printf("%-*.*s", LARGEUR_ETAT, LARGEUR_ETAT, etat_lignes[l]);
+            else
+                printf("%-*s", LARGEUR_ETAT, "");
+
+            // 🔥 transitions (corrigé aussi)
+            for (j = 0; j < A->nb_symboles; j++) {
+                if (l < nb_lignes_cellule[j])
+                    printf("| %-*.*s", LARGEUR_COL - 2, LARGEUR_COL - 2, cellules[j][l]);
+                else
+                    printf("| %-*s", LARGEUR_COL - 2, "");
+            }
+
+            printf("|\n");
+        }
     }
 }
 Automate* lire_automate_sur_fichier(const char *nom_fichier) {

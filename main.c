@@ -31,19 +31,19 @@ int main() {
 
     if (est_deterministe(AF)) {
 
-        printf("✔️ Automate déterministe\n");
+        printf("Automate deterministe\n");
 
         if (est_complet(AF)) {
-            printf("✔️ Automate complet\n");
+            printf("Automate complet\n");
             AFDC = AF;
         } else {
-            printf("❌ Automate non complet\n");
+            printf("Automate non complet\n");
             AFDC = completion(AF);
         }
 
     } else {
 
-        printf("❌ Automate non déterministe\n");
+        printf("Automate non deterministe\n");
         AFDC = determinisation_et_completion_automate(AF);
     }
 
