@@ -1,128 +1,215 @@
 // main.c
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "automate.h"
 
 /*
-Lecture d’un fichier .txt décrivant un automate :
-
-Ligne 1 :
-    - Premier nombre : nombre de symboles dans l'alphabet
-      puis? les symboles eux-mêmes
-    - Sert à construire l’alphabet de l’automate
-
-Ligne 2 :
-    - Premier nombre : nombre total d’états
-      Puis, les noms/indices des états
-    - Sert à initialiser tous les états de l’automate
-
-Ligne 3 :
-    - Premier nombre : nombre d’états initiaux
-    PUIS? LA liste des états initiaux
-    - Sert à définir l’état de départ de l’automate
-
-Ligne 4 :
-    - Premier nombre : nombre d’états finaux
-    puis la liste des états finaux (ici l’état '7')
-    - Sert à définir les états acceptants de l’automate
-
-Ligne 5 :
-    - Indique le nombre total de transitions (ici 12)
-    - Sert à savoir combien de lignes suivantes contiennent des transitions
-
-Lignes suivantes sont les differents transitions
-    - Format de chaque ligne : "état_source + symbole + état_destination"
-    - Exemple :
-        "0ε1"  -> de l’état 0, sur le symbole ε, on va à l’état 1
-        "2b1"  -> de l’état 2, sur le symbole b, on va à l’état 1
-Remarques :
-    - 'ε' est un symbole spécial pour les transitions epsilon
-    - Les premières lignes servent à préparer l’automate avant de lire les transitions
-*/
+ * Affiche le menu des actions disponibles pour l'utilisateur.
+ * Appelée à chaque itération de la boucle principale.
+ */
+void afficher_menu() {
+    printf("\n========== MENU ==========\n");
+    printf("  afficher       - Afficher l'automate\n");
+    printf("  standardiser   - Standardiser l'automate\n");
+    printf("  determiniser   - Determiniser et completer l'automate\n");
+    printf("  complementaire - Calculer l'automate complementaire\n");
+    printf("  minimiser      - Minimiser l'automate\n");
+    printf("  reconnaitre    - Reconnaitre un mot\n");
+    printf("  changer        - Changer d'automate\n");
+    printf("  sortir         - Quitter le programme\n");
+    printf("===========================\n");
+    printf("Que veux-tu faire ? : ");
+}
 
 int main() {
-    int choix;
-    char chemin[256];
-    char mot[256];
-    char reponse[10];
 
-    //Boucle générale de traitement
-    do {
-        printf("\nQuel automate veux tu utiliser ?:  ");
-        scanf("%d", &choix);
+    /* --- Variables générales --- */
+    int  choix;           // Numéro de l'automate choisi par l'utilisateur
+    char chemin[256];     // Chemin vers le fichier .txt de l'automate
+    char mot[256];        // Mot saisi par l'utilisateur pour la reconnaissance
+    char commande[64];    // Commande saisie dans le menu
 
-        printf("\n===== Affichage de l'automate =====\n");
-        sprintf(chemin, "../Automates/automate%d.txt", choix);
+    /* --- Pointeurs sur les différentes formes de l'automate --- */
+    Automate *AF    = NULL;  // Automate de base lu depuis le fichier
+    Automate *AFDC  = NULL;  // Automate Fini Deterministe Complet
+    Automate *AFDCM = NULL;  // Automate Fini Deterministe Complet Minimal
 
-        Automate *AF = lire_automate_sur_fichier(chemin);
+    /*
+     * Drapeau indiquant si l'AFDC a déjà été calculé.
+     * Certaines opérations (complémentaire, minimisation, reconnaissance)
+     * nécessitent que la déterminisation ait été faite au préalable.
+     */
+    int afdc_pret = 0;
 
-        afficher_automate(AF);
-        if (est_standard(AF)) {
-            printf("L'automate est STANDARDISE\n");
-        } else {
-            printf("L'automate n'est PAS standardise\n");
-            Automate *AS = standardisation(AF);
+    /* ------------------------------------------------------------------ */
+    /*  Chargement initial de l'automate                                   */
+    /* ------------------------------------------------------------------ */
+    printf("Quel automate veux tu utiliser ? : ");
+    scanf("%d", &choix);
+    sprintf(chemin, "../Automates/automate%d.txt", choix);
+    AF = lire_automate_sur_fichier(chemin);
 
-            printf("\n===== AUTOMATE STANDARDISE =====\n");
-            afficher_automate(AS);
+    /* ------------------------------------------------------------------ */
+    /*  Boucle principale du menu                                          */
+    /* ------------------------------------------------------------------ */
+    while (1) {
 
-            free(AS);
-        }
+        afficher_menu();
+        scanf("%s", commande);
 
-        Automate *AFDC = NULL;
+        /* -------------------------------------------------------------- */
+        /*  AFFICHER : affiche l'automate brut tel que lu depuis le fichier */
+        /* -------------------------------------------------------------- */
+        if (strcmp(commande, "afficher") == 0) {
 
-        if (est_deterministe(AF)) {
+            printf("\n===== Affichage de l'automate =====\n");
+            afficher_automate(AF);
 
-            printf("Automate deterministe\n");
+        /* -------------------------------------------------------------- */
+        /*  STANDARDISER : standardise l'automate s'il ne l'est pas déjà  */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "standardiser") == 0) {
 
-            if (est_complet(AF)) {
-                printf("Automate complet\n");
-                AFDC = AF;
+            if (est_standard(AF)) {
+                printf("L'automate est deja STANDARDISE.\n");
             } else {
-                printf("Automate non complet\n");
-                AFDC = completion(AF);
+                Automate *AS = standardisation(AF);
+                printf("\n===== AUTOMATE STANDARDISE =====\n");
+                afficher_automate(AS);
+                free(AS);  // L'automate standardisé est temporaire, on le libère
             }
 
+        /* -------------------------------------------------------------- */
+        /*  DETERMINISER : déterminise et complète l'automate              */
+        /*  Résultat stocké dans AFDC, nécessaire pour les étapes suivantes */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "determiniser") == 0) {
+
+            /* Libère les anciens AFDC/AFDCM avant d'en recalculer de nouveaux */
+            if (AFDCM != NULL && AFDCM != AFDC) free(AFDCM);
+            if (AFDC  != NULL && AFDC  != AF)   free(AFDC);
+            AFDCM = NULL;
+
+            if (est_deterministe(AF)) {
+                printf("Automate deterministe\n");
+
+                if (est_complet(AF)) {
+                    /* L'automate est déjà déterministe ET complet : AFDC == AF
+                     * On ne crée pas de copie pour éviter un double free plus tard */
+                    printf("Automate complet\n");
+                    AFDC = AF;
+                } else {
+                    /* Déterministe mais incomplet : on complète uniquement */
+                    printf("Automate non complet -> completion...\n");
+                    AFDC = completion(AF);
+                }
+            } else {
+                /* Non déterministe : déterminisation + complétion en une passe */
+                printf("Automate non deterministe -> determinisation + completion...\n");
+                AFDC = determinisation_et_completion_automate(AF);
+            }
+
+            afficher_automate_deterministe_complet(AFDC);
+            afdc_pret = 1;  // L'AFDC est maintenant disponible pour la suite
+
+        /* -------------------------------------------------------------- */
+        /*  COMPLEMENTAIRE : calcule l'automate complémentaire de l'AFDC  */
+        /*  Nécessite que la déterminisation ait été effectuée             */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "complementaire") == 0) {
+
+            if (!afdc_pret) {
+                printf("Lance d'abord 'determiniser' pour obtenir l'AFDC.\n");
+            } else {
+                Automate *AComp = automate_complementaire(AFDC);
+                printf("\n===== AUTOMATE COMPLEMENTAIRE =====\n");
+                afficher_automate(AComp);
+                free(AComp);  // Résultat temporaire, libéré après affichage
+            }
+
+        /* -------------------------------------------------------------- */
+        /*  MINIMISER : calcule l'automate minimal depuis l'AFDC           */
+        /*  Utilise l'algorithme de partition (classes d'équivalence)      */
+        /*  Nécessite que la déterminisation ait été effectuée             */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "minimiser") == 0) {
+
+            if (!afdc_pret) {
+                printf("Lance d'abord 'determiniser' pour obtenir l'AFDC.\n");
+            } else {
+                /* Libère un éventuel AFDCM calculé précédemment */
+                if (AFDCM != NULL && AFDCM != AFDC) free(AFDCM);
+
+                AFDCM = minimisation(AFDC);
+                afficher_automate_minimal(AFDCM, AFDC,
+                                         get_correspondance(), AFDC->nb_etats);
+            }
+
+        /* -------------------------------------------------------------- */
+        /*  RECONNAITRE : teste si des mots sont reconnus par l'AFDC       */
+        /*  L'utilisateur saisit des mots un par un.                       */
+        /*  Taper "fin" pour revenir au menu.                              */
+        /*  Nécessite que la déterminisation ait été effectuée             */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "reconnaitre") == 0) {
+
+            if (!afdc_pret) {
+                printf("Lance d'abord 'determiniser' pour obtenir l'AFDC.\n");
+            } else {
+                printf("(tape 'fin' pour revenir au menu)\n");
+
+                /* Vide le buffer d'entrée avant de lire les mots */
+                while (getchar() != '\n');
+
+                lire_mot(mot);
+                while (strcmp(mot, "fin") != 0) {
+                    if (reconnaitre_mot(AFDC, mot))
+                        printf(" \"%s\" : OUI\n\n", mot);
+                    else
+                        printf(" \"%s\" : NON\n\n", mot);
+                    lire_mot(mot);
+                }
+                printf("Retour au menu.\n");
+            }
+
+        /* -------------------------------------------------------------- */
+        /*  CHANGER : charge un nouvel automate depuis un fichier          */
+        /*  Libère toute la mémoire allouée avant de recharger             */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "changer") == 0) {
+
+            /* Libère dans l'ordre inverse de création pour éviter les fuites */
+            if (AFDCM != NULL && AFDCM != AFDC) free(AFDCM);
+            if (AFDC  != NULL && AFDC  != AF)   free(AFDC);
+            free(AF);
+
+            AFDC     = NULL;
+            AFDCM    = NULL;
+            afdc_pret = 0;
+
+            printf("Quel automate veux tu utiliser ? : ");
+            scanf("%d", &choix);
+            sprintf(chemin, "../Automates/automate%d.txt", choix);
+            AF = lire_automate_sur_fichier(chemin);
+
+        /* -------------------------------------------------------------- */
+        /*  SORTIR : libère toute la mémoire et quitte proprement          */
+        /* -------------------------------------------------------------- */
+        } else if (strcmp(commande, "sortir") == 0) {
+
+            if (AFDCM != NULL && AFDCM != AFDC) free(AFDCM);
+            if (AFDC  != NULL && AFDC  != AF)   free(AFDC);
+            free(AF);
+
+            printf("Au revoir !\n");
+            return 0;
+
+        /* -------------------------------------------------------------- */
+        /*  Commande inconnue                                              */
+        /* -------------------------------------------------------------- */
         } else {
-
-            printf("Automate non deterministe\n");
-            AFDC = determinisation_et_completion_automate(AF);
+            printf("Commande non reconnue. Retape une commande du menu.\n");
         }
-
-        afficher_automate_deterministe_complet(AFDC);
-
-        // ---- Complémentaire ----
-        Automate *AComp = automate_complementaire(AFDC);
-
-        printf("\n===== AUTOMATE COMPLEMENTAIRE =====\n");
-        afficher_automate(AComp);
-
-        free(AComp);
-
-        // ---- Minimisation ----
-        Automate *AFDCM = minimisation(AFDC);
-        afficher_automate_minimal(AFDCM, AFDC,
-                                  get_correspondance(), AFDC->nb_etats);
-        while (getchar() != '\n');
-        lire_mot(mot);
-        while (strcmp(mot, "fin") != 0) {
-            if (reconnaitre_mot(AFDC, mot))
-                printf(" \"%s\" : OUI\n\n", mot);
-            else
-                printf(" \"%s\" : NON\n\n", mot);
-            lire_mot(mot);
-        }
-
-        if (AFDCM != AFDC) free(AFDCM);
-        if (AFDC != AF) free(AFDC);
-        free(AF);
-
-        // Continuer ?
-        printf("\nVoulez-vous traiter un autre automate ? (oui/non) : ");
-        scanf("%s", reponse);
-
-    } while (strcmp(reponse, "oui") == 0);
-
-    printf("Au revoir !\n");
-    return 0;
+    }
 }
